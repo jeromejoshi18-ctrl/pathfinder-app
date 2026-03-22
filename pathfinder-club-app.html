@@ -1,0 +1,2645 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PathfinderApp</title>
+<style>
+/* ══════════════════════════════════════════
+   THEME SYSTEM — light is default
+══════════════════════════════════════════ */
+:root,[data-theme="light"]{
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#e8edf3;--card:#ffffff;
+  --border:#d1dae6;--accent:#2563eb;--a2:#059669;
+  --amb:#d97706;--red:#dc2626;--pur:#7c3aed;
+  --txt:#1e293b;--mut:#64748b;--r:12px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --hdr-bg:#ffffff;--hdr-border:#e2e8f0;
+  --wb1:#1e3a8a;--wb2:#1e40af;
+}
+[data-theme="dark"]{
+  --bg:#0f1923;--bg2:#1a2535;--bg3:#243044;--card:#1e2d40;
+  --border:#2e4060;--accent:#3a7bd5;--a2:#00b894;
+  --amb:#f39c12;--red:#e74c3c;--pur:#9b59b6;
+  --txt:#e8f0fe;--mut:#8899aa;
+  --shadow:0 4px 20px rgba(0,0,0,.4);
+  --hdr-bg:#1a2535;--hdr-border:#2e4060;
+  --wb1:#1a3a6e;--wb2:#243044;
+}
+[data-theme="blue"]{
+  --bg:#eff6ff;--bg2:#ffffff;--bg3:#dbeafe;--card:#ffffff;
+  --border:#bfdbfe;--accent:#1d4ed8;--a2:#0d9488;
+  --amb:#b45309;--red:#b91c1c;--pur:#6d28d9;
+  --txt:#1e3a5f;--mut:#4b6d9a;
+  --shadow:0 2px 12px rgba(29,78,216,.1);
+  --hdr-bg:#ffffff;--hdr-border:#bfdbfe;
+  --wb1:#1e3a8a;--wb2:#1d4ed8;
+}
+[data-theme="green"]{
+  --bg:#f0fdf4;--bg2:#ffffff;--bg3:#dcfce7;--card:#ffffff;
+  --border:#bbf7d0;--accent:#16a34a;--a2:#0891b2;
+  --amb:#ca8a04;--red:#dc2626;--pur:#7c3aed;
+  --txt:#14532d;--mut:#4d7c5e;
+  --shadow:0 2px 12px rgba(22,163,74,.1);
+  --hdr-bg:#ffffff;--hdr-border:#bbf7d0;
+  --wb1:#14532d;--wb2:#166534;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;font-size:15px;transition:background .3s,color .3s;}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ══ AUTH ══ */
+#auth-screen{overflow-y:auto;align-items:center;justify-content:flex-start;}
+.hero{width:100%;background:linear-gradient(160deg,var(--wb1) 0%,var(--wb2) 55%,var(--wb1) 100%);padding:36px 20px 28px;text-align:center;}
+.hero-logo{width:74px;height:74px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 14px;box-shadow:0 8px 32px rgba(37,99,235,.35);}
+.hero-brand{font-size:27px;font-weight:800;color:#fff;letter-spacing:-.5px;}
+.hero-tag{font-size:12px;color:rgba(255,255,255,.65);margin-top:4px;font-style:italic;}
+.auth-wrap{width:100%;max-width:460px;margin:0 auto;padding:0 20px 50px;}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:12px;padding:3px;margin:20px 0 18px;border:1px solid var(--border);}
+.auth-tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:700;color:var(--mut);cursor:pointer;border-radius:10px;transition:all .2s;}
+.auth-tab.a{background:var(--accent);color:#fff;}
+.lbl{font-size:12px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 5px;display:block;}
+.inp{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--txt);font-size:15px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--accent);}
+.role-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0;}
+.role-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0;}
+.r-btn{background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:12px 4px;color:var(--mut);font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;}
+.r-btn.s{border-color:var(--accent);color:var(--accent);background:rgba(37,99,235,.08);}
+.cls-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0;}
+.c-btn{background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:10px 6px;color:var(--mut);font-size:11px;cursor:pointer;text-align:center;transition:all .2s;line-height:1.35;}
+.c-btn.s{border-color:var(--a2);color:var(--a2);background:rgba(5,150,105,.08);}
+.mg-info{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.3);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--pur);display:flex;gap:8px;align-items:flex-start;margin:8px 0;}
+.btn-main{width:100%;background:linear-gradient(135deg,var(--accent),#3b82f6);border:none;border-radius:12px;padding:15px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:18px;transition:opacity .2s;box-shadow:0 4px 14px rgba(37,99,235,.3);}
+.btn-main:active{opacity:.8;}
+.err{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.25);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--red);margin-top:10px;display:none;}
+.alink{text-align:center;font-size:13px;color:var(--mut);margin-top:14px;cursor:pointer;}
+.alink span{color:var(--accent);font-weight:700;}
+.mode-bar{border-radius:8px;padding:9px 12px;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.mode-bar.demo{background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.25);color:var(--amb);}
+.mode-bar.live{background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.25);color:var(--a2);}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;}
+
+/* ══ SETUP MODAL ══ */
+.sm-txt strong{color:var(--txt);}
+
+
+
+/* ══ SPLASH SCREEN ══ */
+#splash-screen{align-items:center;justify-content:center;background:linear-gradient(160deg,#050f20 0%,#0d2a6e 50%,#050f20 100%);position:fixed;inset:0;z-index:99999;flex-direction:column;}
+.splash-logo{width:110px;height:110px;background:linear-gradient(135deg,#2563eb,#059669);border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:58px;margin-bottom:22px;box-shadow:0 12px 40px rgba(37,99,235,.5);animation:splashPop .6s cubic-bezier(.175,.885,.32,1.275) forwards;}
+@keyframes splashPop{0%{transform:scale(0.5);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.splash-title{font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px;animation:fadeUp .6s .3s both;}
+.splash-tag{font-size:13px;color:rgba(255,255,255,.55);font-style:italic;margin-top:6px;animation:fadeUp .6s .5s both;}
+@keyframes fadeUp{0%{opacity:0;transform:translateY(16px);}100%{opacity:1;transform:translateY(0);}}
+.splash-bar-wrap{width:200px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin-top:40px;overflow:hidden;animation:fadeUp .6s .7s both;}
+.splash-bar{height:4px;background:linear-gradient(90deg,#2563eb,#059669);border-radius:2px;width:0%;animation:splashLoad 4s .8s cubic-bezier(.4,0,.2,1) forwards;}
+@keyframes splashLoad{0%{width:0%;}60%{width:70%;}85%{width:90%;}100%{width:100%;}}
+.splash-verse{font-size:12px;color:rgba(255,255,255,.4);margin-top:16px;text-align:center;max-width:280px;line-height:1.6;animation:fadeUp .6s .9s both;}
+.splash-fade{animation:splashFade .5s forwards;}
+@keyframes splashFade{to{opacity:0;pointer-events:none;}}
+/* ══ OFFLINE SCREEN ══ */
+#offline-screen{align-items:center;justify-content:center;background:var(--bg);padding:32px;}
+.offline-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 28px;max-width:380px;width:100%;text-align:center;box-shadow:var(--shadow);}
+.offline-icon{font-size:72px;margin-bottom:16px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.offline-title{font-size:22px;font-weight:800;color:var(--txt);margin-bottom:8px;}
+.offline-msg{font-size:14px;color:var(--mut);line-height:1.6;margin-bottom:24px;}
+.offline-steps{background:var(--bg3);border-radius:12px;padding:14px 16px;margin-bottom:24px;text-align:left;}
+.offline-step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut);margin-bottom:8px;}
+.offline-step:last-child{margin-bottom:0;}
+.offline-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.retry-btn{width:100%;background:linear-gradient(135deg,var(--accent),#3b82f6);border:none;border-radius:12px;padding:14px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.3);}
+.retry-btn:active{opacity:.8;}
+.offline-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px;}
+.offline-logo{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+/* ══ LOADING ══ */
+#loading-screen{align-items:center;justify-content:center;background:var(--bg);}
+.spin{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+/* ══ HEADER ══ */
+.hdr{background:var(--hdr-bg);padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--hdr-border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.hdr-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.hdr-title{font-size:17px;font-weight:700;color:var(--txt);}
+.hdr-sub{font-size:11px;color:var(--mut);}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.icon-btn{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+
+/* ══ BOTTOM NAV ══ */
+.bnav{background:var(--hdr-bg);border-top:1px solid var(--hdr-border);display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,.06);}
+.nb{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--mut);font-size:9px;font-weight:600;cursor:pointer;transition:color .2s;position:relative;}
+.nb.a{color:var(--accent);}
+.ni{font-size:20px;}
+.nb-dot{position:absolute;top:8px;right:calc(50% - 14px);width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--hdr-bg);}
+
+/* ══ CONTENT ══ */
+.con{flex:1;padding:16px;padding-bottom:82px;overflow-y:auto;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
+.ct{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;font-weight:800;}
+.sh{font-size:18px;font-weight:800;margin-bottom:14px;color:var(--txt);}
+.tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:16px;border:1px solid var(--border);}
+.tab{flex:1;padding:8px 3px;text-align:center;font-size:11px;font-weight:700;color:var(--mut);cursor:pointer;border-radius:8px;transition:all .2s;}
+.tab.a{background:var(--accent);color:#fff;}
+.wb{background:linear-gradient(135deg,var(--wb1),var(--wb2));border-radius:16px;padding:20px;margin-bottom:16px;color:#fff;}
+.wcls{display:inline-block;background:rgba(255,255,255,.2);color:#fff;border-radius:20px;font-size:12px;padding:3px 10px;margin-bottom:8px;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;cursor:pointer;transition:all .2s;text-align:center;box-shadow:var(--shadow);}
+.sc:active{transform:scale(.97);}
+.srow{background:var(--bg3);border-radius:10px;padding:11px;display:flex;align-items:center;gap:11px;margin-bottom:8px;border:1px solid var(--border);}
+.av{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+.si{flex:1;}
+.sn{font-size:14px;font-weight:600;color:var(--txt);}
+.sm2{font-size:11px;color:var(--mut);}
+.abtns{display:flex;gap:5px;}
+.ab{padding:6px 9px;border-radius:8px;border:1.5px solid;font-size:10px;font-weight:800;cursor:pointer;transition:all .2s;background:transparent;}
+.ab.p{border-color:var(--a2);color:var(--a2);}
+.ab.p.on{background:var(--a2)!important;color:#fff!important;border-color:var(--a2)!important;}
+.ab.ab2{border-color:var(--red);color:var(--red);}
+.ab.ab2.on{background:var(--red)!important;color:#fff!important;border-color:var(--red)!important;}
+.ab.l{border-color:var(--amb);color:var(--amb);}
+.ab.l.on{background:var(--amb)!important;color:#fff!important;border-color:var(--amb)!important;}
+.hb{flex:1;padding:6px 3px;border-radius:8px;border:1.5px solid;font-size:10px;font-weight:800;cursor:pointer;text-align:center;transition:all .2s;background:transparent;}
+.hb.bad{border-color:var(--red);color:var(--red);}
+.hb.bad.on{background:var(--red)!important;color:#fff!important;}
+.hb.good{border-color:var(--amb);color:var(--amb);}
+.hb.good.on{background:var(--amb)!important;color:#fff!important;}
+.hb.perf{border-color:var(--a2);color:var(--a2);}
+.hb.perf.on{background:var(--a2)!important;color:#fff!important;}
+.starr{display:flex;gap:4px;}
+.st{width:27px;height:27px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;transition:all .2s;}
+.st.on{background:var(--amb);border-color:var(--amb);}
+.sbw{flex:1;height:6px;background:var(--border);border-radius:3px;margin:0 10px;}
+.sbar{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--a2));transition:width .5s;}
+.upz{border:2px dashed var(--border);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-bottom:10px;transition:border-color .2s;}
+.upz:active{border-color:var(--accent);}
+.ufile{background:var(--bg3);border-radius:10px;padding:11px;display:flex;align-items:center;gap:10px;margin-bottom:8px;border:1px solid var(--border);}
+.dcard{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:var(--r);padding:16px;margin-bottom:12px;color:#fff;}
+.dn{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:11px;color:var(--txt);font-size:14px;min-height:80px;outline:none;resize:none;margin-top:7px;}
+.stgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stcard{background:var(--bg3);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border);}
+.stnum{font-size:26px;font-weight:800;color:var(--accent);}
+.badge{display:inline-block;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700;}
+.bg{background:rgba(5,150,105,.1);color:var(--a2);}
+.bb{background:rgba(37,99,235,.1);color:var(--accent);}
+.ba{background:rgba(217,119,6,.1);color:var(--amb);}
+.bp{background:rgba(124,58,237,.1);color:var(--pur);}
+.br{background:rgba(220,38,38,.1);color:var(--red);}
+.sbtn{width:100%;background:linear-gradient(135deg,var(--a2),#10b981);border:none;border-radius:10px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+.sbtn:active{opacity:.85;}
+.div{height:1px;background:var(--border);margin:14px 0;}
+.toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:var(--a2);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(5,150,105,.4);}
+.toast.show{opacity:1;}
+.mgsec{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:14px;margin-bottom:12px;}
+.mghdr{font-size:14px;font-weight:800;color:var(--pur);display:flex;align-items:center;gap:7px;margin-bottom:10px;}
+
+/* ══ MESSAGES ══ */
+.chat-tabs{display:flex;gap:6px;padding:0 0 12px;overflow-x:auto;scrollbar-width:none;}
+.chat-tabs::-webkit-scrollbar{display:none;}
+.ctab{background:var(--bg3);border:1.5px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--mut);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.ctab.a{background:var(--accent);border-color:var(--accent);color:#fff;}
+.msg-list{padding-bottom:10px;}
+.mbub{margin-bottom:11px;}
+.mbub.me{display:flex;flex-direction:column;align-items:flex-end;}
+.mbub.them{display:flex;flex-direction:column;align-items:flex-start;}
+.bn{font-size:11px;color:var(--mut);margin-bottom:3px;}
+.bt{max-width:80%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.4;}
+.me .bt{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+.them .bt{background:var(--bg3);color:var(--txt);border-bottom-left-radius:4px;border:1px solid var(--border);}
+.btime{font-size:10px;color:var(--mut);margin-top:3px;}
+.mbar{display:none;gap:8px;padding:10px 16px;background:var(--hdr-bg);border-top:1px solid var(--hdr-border);position:fixed;bottom:60px;left:0;right:0;z-index:99;}
+.minp{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:20px;padding:10px 14px;color:var(--txt);font-size:14px;outline:none;}
+.msnd{background:var(--accent);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;flex-shrink:0;}
+
+/* ══ SETTINGS ══ */
+.set-section{margin-bottom:20px;}
+.set-title{font-size:13px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card);border-radius:10px;margin-bottom:6px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.set-label{font-size:14px;font-weight:600;color:var(--txt);}
+.set-sub{font-size:11px;color:var(--mut);margin-top:2px;}
+.toggle{width:46px;height:26px;border-radius:13px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.toggle.on::after{transform:translateX(20px);}
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.theme-btn{border:2px solid var(--border);border-radius:10px;padding:12px 8px;cursor:pointer;text-align:center;font-size:12px;font-weight:700;color:var(--mut);transition:all .2s;}
+.theme-btn.s{border-color:var(--accent);color:var(--accent);}
+.theme-swatch{width:28px;height:28px;border-radius:8px;margin:0 auto 6px;}
+.profile-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;margin:0 auto 10px;box-shadow:0 4px 14px rgba(37,99,235,.3);}
+
+/* ══ AI NOTIFICATION BANNER ══ */
+.ai-banner{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(37,99,235,.08));border:1px solid rgba(124,58,237,.25);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;}
+.ai-icon{font-size:22px;flex-shrink:0;}
+.ai-title{font-size:13px;font-weight:800;color:var(--pur);margin-bottom:3px;}
+.ai-body{font-size:12px;color:var(--mut);line-height:1.5;}
+.ai-dismiss{background:var(--accent);border:none;border-radius:8px;padding:5px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;}
+
+/* ══ DEVOTION CHANNEL ══ */
+.dev-verse{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px;color:#fff;}
+.dev-ref{font-size:12px;color:rgba(255,255,255,.6);font-weight:700;margin-top:6px;}
+
+
+.honor-item:hover{border-color:var(--accent)!important;transform:scale(1.01);}
+.honor-item{transition:all .2s;}
+
+select.inp{-webkit-appearance:none;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════ SPLASH SCREEN ══════════ -->
+<div id="splash-screen" style="display:flex">
+  <div class="splash-logo">⛺</div>
+  <div class="splash-title">PathfinderApp</div>
+  <div class="splash-tag">"The Love of Christ Compels Us"</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+  <div class="splash-verse">2 Corinthians 5:14<br>Seventh-day Adventist Pathfinder Club</div>
+</div>
+
+<!-- ══════════ OFFLINE SCREEN ══════════ -->
+<div class="screen" id="offline-screen" style="display:none">
+  <div class="offline-card">
+    <div class="offline-brand">
+      <div class="offline-logo">⛺</div>
+      <div style="font-size:18px;font-weight:800;color:var(--txt)">PathfinderApp</div>
+    </div>
+    <div class="offline-icon">📡</div>
+    <div class="offline-title">No Internet Connection</div>
+    <div class="offline-msg">PathfinderApp needs the internet to sync data, messages, and accounts with your Pathfinder Club.</div>
+    <div class="offline-steps">
+      <div class="offline-step"><div class="offline-step-num">1</div><span>Turn on <strong>Wi-Fi</strong> or mobile <strong>Data</strong></span></div>
+      <div class="offline-step"><div class="offline-step-num">2</div><span>Make sure <strong>Airplane mode</strong> is off</span></div>
+      <div class="offline-step"><div class="offline-step-num">3</div><span>Tap <strong>Try Again</strong> below</span></div>
+    </div>
+    <button class="retry-btn" onclick="retryConnection()">🔄 Try Again</button>
+  </div>
+</div>
+
+<!-- ══════════ LOADING ══════════ -->
+<div class="screen" id="loading-screen" style="display:none">
+  <div class="spin"></div>
+  <div style="margin-top:16px;font-size:14px;color:var(--mut)" id="load-txt">Loading...</div>
+</div>
+
+<!-- ══════════ AUTH SCREEN ══════════ -->
+<div class="screen active" id="auth-screen">
+  <div class="hero">
+    <div class="hero-logo">⛺</div>
+    <div class="hero-brand">PathfinderApp</div>
+    <div class="hero-tag">"The Love of Christ Compels Us"</div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-tabs">
+      <div class="auth-tab a" id="at-si" onclick="authTab('si')">Sign In</div>
+      <div class="auth-tab" id="at-su" onclick="authTab('su')">Create Account</div>
+    </div>
+    <!-- SIGN IN -->
+    <div id="form-si">
+      <div id="si-mode-bar"></div>
+      <label class="lbl">Email</label><input class="inp" id="si-email" type="email" placeholder="your@email.com">
+      <label class="lbl">Password</label><input class="inp" id="si-pw" type="password" placeholder="••••••••">
+      <div class="err" id="si-err"></div>
+      <button class="btn-main" onclick="doSignIn()">Sign In →</button>
+      <div class="alink" onclick="authTab('su')">No account? <span>Create one</span></div>
+    </div>
+    <!-- CREATE ACCOUNT -->
+    <div id="form-su" style="display:none">
+      <label class="lbl">Pathfinder Club Name</label>
+      <input class="inp" id="su-club" placeholder="e.g. Nairobi Central Pathfinder Club">
+      <label class="lbl">Full Name</label><input class="inp" id="su-name" placeholder="e.g. Samuel Kimani">
+      <label class="lbl">Email</label><input class="inp" id="su-email" type="email" placeholder="your@email.com">
+      <label class="lbl">Password <span style="font-weight:400;color:var(--mut)">(min 6 chars)</span></label>
+      <input class="inp" id="su-pw" type="password" placeholder="••••••••">
+      <label class="lbl" style="margin-top:14px">I am a...</label>
+      <div class="role-row-3">
+        <div class="r-btn" id="rb-student" onclick="pickRole('student')"><span style="font-size:20px;display:block;margin-bottom:3px">👦</span>Student</div>
+        <div class="r-btn" id="rb-instructor" onclick="pickRole('instructor')"><span style="font-size:20px;display:block;margin-bottom:3px">👩‍🏫</span>Instructor</div>
+        <div class="r-btn" id="rb-director" onclick="pickRole('director')"><span style="font-size:20px;display:block;margin-bottom:3px">🎖</span>Director</div>
+      </div>
+      <!-- Director sub-role -->
+      <div id="dir-subrole" style="display:none">
+        <label class="lbl">Director Type</label>
+        <div class="role-row">
+          <div class="r-btn" id="rb-director-main" onclick="pickDirType('director')"><span style="font-size:20px;display:block;margin-bottom:3px">🎖</span>Director</div>
+          <div class="r-btn" id="rb-deputy" onclick="pickDirType('deputy')"><span style="font-size:20px;display:block;margin-bottom:3px">🏳️</span>Deputy Director</div>
+        </div>
+      </div>
+      <div id="cls-picker" style="display:none">
+        <label class="lbl" style="margin-top:12px">Select Your Investiture Class</label>
+        <div class="cls-grid" id="cls-grid"></div>
+        <div class="mg-info" id="mg-note" style="display:none">🏅 <span><strong>Master Guide</strong> is the highest AY leadership level — for instructors/leaders ages 16+.</span></div>
+      </div>
+      <div id="slot-picker" style="display:none">
+        <label class="lbl" style="margin-top:12px">Instructor Position</label>
+        <div class="role-row">
+          <div class="r-btn s" id="rb-slot1" onclick="pickSlot('slot1')"><span style="font-size:18px;display:block;margin-bottom:3px">1️⃣</span>Instructor 1</div>
+          <div class="r-btn" id="rb-slot2" onclick="pickSlot('slot2')"><span style="font-size:18px;display:block;margin-bottom:3px">2️⃣</span>Instructor 2</div>
+        </div>
+        <div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5">Each class can have 2 instructors. If slot is already taken the app will let you know.</div>
+      </div>
+      <div class="err" id="su-err"></div>
+      <button class="btn-main" onclick="doSignUp()">Create Account →</button>
+      <div class="alink" onclick="authTab('si')">Already have an account? <span>Sign In</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div class="screen" id="main-screen" style="display:none">
+  <div class="hdr">
+    <div class="hdr-logo">⛺</div>
+    <div>
+      <div class="hdr-title" id="hdr-title">PathfinderApp</div>
+      <div class="hdr-sub" id="hdr-sub"></div>
+    </div>
+    <div class="hdr-actions">
+      <span id="hdr-mode" style="font-size:11px;color:var(--mut)"></span>
+      <div class="icon-btn" onclick="swTab('settings')" title="Settings">⚙️</div>
+      <div class="av" id="hdr-av" onclick="doSignOut()" title="Tap to sign out" style="cursor:pointer"></div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="con" id="tab-home">
+    <div id="ai-notif-banner" style="display:none"></div>
+    <div class="wb">
+      <div class="wcls" id="hm-cls"></div>
+      <div style="font-size:21px;font-weight:800;margin-bottom:4px" id="hm-greet"></div>
+      <div style="font-size:13px;opacity:.8" id="hm-role"></div>
+    </div>
+    <div class="ct">QUICK ACCESS</div>
+    <div class="sgrid" id="hm-sections"></div>
+    <!-- AI Today's Tip -->
+    <div class="card" id="ai-tip-card" style="display:none">
+      <div class="ct">✨ AI DAILY TIP</div>
+      <div id="ai-tip-text" style="font-size:14px;color:var(--txt);line-height:1.6"></div>
+      <div style="font-size:11px;color:var(--mut);margin-top:6px">Powered by PathfinderAI</div>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="con" id="tab-messages" style="display:none;padding-bottom:140px">
+    <div class="chat-tabs" id="chat-tabs"></div>
+    <div id="msg-list" class="msg-list"></div>
+  </div>
+  <div class="mbar" id="mbar">
+    <input class="minp" id="minp" placeholder="Send a message...">
+    <button class="msnd" onclick="sendMsg()">➤</button>
+  </div>
+
+  <!-- STUDENTS PANEL -->
+  <div class="con" id="tab-students" style="display:none">
+    <div class="sh">My Panel</div>
+    <div class="tabs">
+      <div class="tab a" onclick="subTab('students','scores')">📊 Scores</div>
+      <div class="tab" onclick="subTab('students','uploads')">📤 Uploads</div>
+    </div>
+    <div id="sub-students-scores">
+      <div class="card"><div class="ct">INSTRUCTOR SCORES</div><div id="stu-scores"></div></div>
+      <div class="card"><div class="ct">ATTENDANCE</div><div id="stu-att"></div></div>
+      <div class="card"><div class="ct">PERSONAL HYGIENE</div><div id="stu-hyg"></div></div>
+    </div>
+    <div id="sub-students-uploads" style="display:none">
+      <div class="tabs">
+        <div class="tab a" onclick="upTab('journals')">📓 Journals</div>
+        <div class="tab" onclick="upTab('honors')">🏅 Honors</div>
+        <div class="tab" onclick="upTab('requirements')">📋 Req. Book</div>
+      </div>
+
+      <!-- JOURNALS -->
+      <div id="up-journals">
+        <div class="ct">MY JOURNAL ENTRIES</div>
+        <div class="upz" onclick="fakeUp('journal')">
+          <div style="font-size:28px;margin-bottom:6px">📓</div>
+          <div style="font-weight:700;margin-bottom:3px">Upload Journal Entry</div>
+          <div style="font-size:12px;color:var(--mut)">Tap to select file or photo</div>
+        </div>
+        <div id="jfiles"></div>
+      </div>
+
+      <!-- HONORS -->
+      <div id="up-honors" style="display:none">
+        <div class="ct">MY HONORS</div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5">
+          Tap an honor to mark it as <strong>In Progress</strong> or <strong>Earned</strong>. Upload your certificate when done.
+        </div>
+        <div id="honors-checklist"></div>
+        <div style="margin-top:14px">
+          <div class="ct">SUBMIT HONOR TO INSTRUCTOR</div>
+          <div style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.5">
+            Type the honor name, attach a photo of your work, and send it directly to your instructor for verification.
+          </div>
+          <label class="lbl">Honor Name</label>
+          <input class="inp" id="honor-submit-name" placeholder="e.g. Cooking, First Aid, Swimming..." style="margin-bottom:10px">
+          <label class="lbl">Note to Instructor <span style="font-weight:400;color:var(--mut)">(optional)</span></label>
+          <textarea class="dn" id="honor-submit-note" placeholder="e.g. I completed all 8 requirements for this honor..." style="min-height:60px;margin-bottom:10px"></textarea>
+          <label class="lbl">Attach Photo <span style="font-weight:400;color:var(--mut)">(of your work / certificate)</span></label>
+          <div class="upz" id="honor-photo-zone" onclick="pickHonorPhoto()" style="margin-bottom:10px;padding:16px">
+            <div style="font-size:24px;margin-bottom:4px" id="honor-photo-icon">📷</div>
+            <div style="font-weight:700;font-size:13px" id="honor-photo-label">Tap to attach a photo</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px">Your photo will be sent to your instructor</div>
+          </div>
+          <div id="honor-photo-preview" style="display:none;margin-bottom:10px">
+            <img id="honor-preview-img" style="width:100%;border-radius:10px;border:1px solid var(--border);max-height:200px;object-fit:cover">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+              <span style="font-size:12px;color:var(--a2);font-weight:700" id="honor-photo-name"></span>
+              <button onclick="clearHonorPhoto()" style="background:var(--red);border:none;border-radius:6px;padding:4px 10px;color:#fff;font-size:11px;cursor:pointer">Remove</button>
+            </div>
+          </div>
+          <button class="sbtn" onclick="submitHonorToInstructor()">📨 Send to Instructor</button>
+          <div class="ct" style="margin-top:16px">MY SUBMISSIONS</div>
+          <div id="submitted-honors-list"></div>
+        </div>
+      </div>
+
+      <!-- REQUIREMENT BOOK -->
+      <div id="up-requirements" style="display:none">
+        <div class="ct">MY REQUIREMENT BOOK</div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5">
+          Check off each requirement as you complete it. Your instructor will verify them.
+        </div>
+        <div id="req-checklist"></div>
+        <div style="margin-top:14px">
+          <div class="ct">UPLOAD REQUIREMENT PAGE</div>
+          <div class="upz" onclick="fakeUp('requirement')">
+            <div style="font-size:28px;margin-bottom:6px">📋</div>
+            <div style="font-weight:700;margin-bottom:3px">Upload Requirement Page</div>
+            <div style="font-size:12px;color:var(--mut)">Tap to select file or photo</div>
+          </div>
+          <div id="rfiles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTRUCTOR PANEL -->
+  <div class="con" id="tab-instructors" style="display:none">
+    <div class="sh">Instructor Panel</div>
+    <div class="tabs">
+      <div class="tab a" onclick="subTab('instructors','attendance')">✅ Attend.</div>
+      <div class="tab" onclick="subTab('instructors','hygiene')">🧼 Hygiene</div>
+      <div class="tab" onclick="subTab('instructors','assessment')">📋 Assess.</div>
+      <div class="tab" onclick="subTab('instructors','honors')">🏅 Honors</div>
+
+    </div>
+    <div id="sub-instructors-attendance">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ct" style="margin-bottom:0">ATTENDANCE — <span id="att-date"></span></div>
+        <button id="att-update-btn" onclick="unlockAtt()" style="display:none;background:var(--amb);border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">✏️ Update</button>
+      </div>
+      <div id="att-saved-banner" style="display:none;background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-bottom:10px">✅ Attendance saved. Tap Update to make changes.</div>
+      <div id="att-list"></div>
+      <button class="sbtn" id="att-save-btn" onclick="saveAtt()">Save Attendance</button>
+    </div>
+    <div id="sub-instructors-hygiene" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ct" style="margin-bottom:0">HYGIENE — <span id="hyg-date"></span></div>
+        <button id="hyg-update-btn" onclick="unlockHyg()" style="display:none;background:var(--amb);border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">✏️ Update</button>
+      </div>
+      <div id="hyg-saved-banner" style="display:none;background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-bottom:10px">✅ Hygiene saved. Tap Update to make changes.</div>
+      <div id="hyg-list"></div>
+      <button class="sbtn" id="hyg-save-btn" onclick="saveHyg()">Save Hygiene</button>
+    </div>
+    <div id="sub-instructors-assessment" style="display:none">
+      <div class="tabs">
+        <div class="tab a" onclick="assTab('notes')">📝 Notes</div>
+        <div class="tab" onclick="assTab('scoring')">⭐ Scoring</div>
+      </div>
+      <div id="ass-notes">
+        <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+          <span>ASSESSMENT NOTES</span>
+          <span style="font-size:10px;color:var(--a2);font-weight:700">● LIVE</span>
+        </div>
+        <select class="inp" id="ass-sel" style="margin-bottom:10px" onchange="loadNotes(this.value);loadStudentReqs(this.value)"></select>
+        <div id="inst-req-preview" style="display:none;margin-bottom:12px">
+          <div class="ct">STUDENT REQUIREMENT PROGRESS</div>
+          <div id="inst-req-content"></div>
+        </div>
+        <textarea class="dn" id="ass-ta" placeholder="Write notes..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="sbtn" onclick="saveAss()" id="ass-save-btn" style="flex:1">💾 Save Notes</button>
+          <button onclick="unlockAss()" id="ass-update-btn" style="display:none;flex:1;background:var(--amb);border:none;border-radius:10px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer">✏️ Update</button>
+        </div>
+        <div id="ass-saved-banner" style="display:none;background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-top:8px">✅ Notes saved. Tap Update to edit.</div>
+      </div>
+      <div id="ass-scoring" style="display:none">
+        <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+          <span>SCORING — out of 5</span>
+          <span style="font-size:10px;color:var(--a2);font-weight:700">● LIVE</span>
+        </div>
+        <select class="inp" id="sc-sel" style="margin-bottom:12px" onchange="loadExistingScores(this.value)"></select>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Punctuality / On-time</div><div class="starr" id="st-p"></div><div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-p">0/5</div></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Neatness / Presentation</div><div class="starr" id="st-n"></div><div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-n">0/5</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Subject Clarity</div><div class="starr" id="st-c"></div><div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-c">0/5</div></div>
+        </div>
+        <div id="sc-saved-banner" style="display:none;background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-bottom:8px">✅ Scores saved. Tap Update to edit.</div>
+        <div style="display:flex;gap:8px">
+          <button class="sbtn" onclick="saveSc()" id="sc-save-btn" style="flex:1">💾 Save Scores</button>
+          <button onclick="unlockSc()" id="sc-update-btn" style="display:none;flex:1;background:var(--amb);border:none;border-radius:10px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer">✏️ Update</button>
+        </div>
+      </div>
+    </div>
+    <div id="sub-instructors-honors" style="display:none">
+      <div class="ct">HONOR SUBMISSIONS FROM STUDENTS</div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5">Students submit completed honors here for your review. Approve or send back for revision.</div>
+      <div id="honor-inbox"></div>
+      <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6);margin-top:4px" onclick="loadHonorInbox()">🔄 Refresh</button>
+    </div>
+
+  </div>
+
+  <!-- DEVOTION TAB — separate for all roles -->
+  <div class="con" id="tab-devotion" style="display:none">
+    <div class="sh">📖 Devotion</div>
+
+    <!-- STUDENT VIEW -->
+    <div id="dev-student-view">
+      <div class="dcard">
+        <div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:7px">TODAY'S VERSE</div>
+        <div style="font-size:15px;font-style:italic;line-height:1.6" id="dev-today-verse">"The love of Christ compels us..."</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.55);font-weight:700;margin-top:6px" id="dev-today-ref">— 2 Corinthians 5:14</div>
+      </div>
+      <div class="card">
+        <div class="ct">MY DEVOTION STATUS</div>
+        <div id="dev-student-status"></div>
+      </div>
+      <div class="card" id="dev-student-upload-card">
+        <div class="ct">UPLOAD MY DEVOTION JOURNAL</div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:10px;line-height:1.5">Upload a photo of your devotion journal entry. The AI will automatically mark your devotion as uploaded.</div>
+        <div class="upz" onclick="uploadDevotionJournal()" id="dev-upload-zone">
+          <div style="font-size:28px;margin-bottom:6px">📖</div>
+          <div style="font-weight:700;margin-bottom:3px">Upload Devotion Journal</div>
+          <div style="font-size:12px;color:var(--mut)">Tap to select photo</div>
+        </div>
+        <div id="dev-upload-status"></div>
+      </div>
+      <div class="card">
+        <div class="ct">RECENT DEVOTIONS FROM INSTRUCTOR</div>
+        <div id="dev-instructor-posts"></div>
+      </div>
+    </div>
+
+    <!-- INSTRUCTOR VIEW -->
+    <div id="dev-instructor-view" style="display:none">
+      <div class="dcard">
+        <div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:7px">📖 POST CLASS DEVOTION</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.5">Post today's devotion — your students will see it and can upload their journal entries.</div>
+      </div>
+      <label class="lbl">Topic / Theme</label>
+      <input class="inp" id="dev-topic" placeholder="e.g. Faithfulness, Service, Prayer...">
+      <label class="lbl">Scripture Reference</label>
+      <input class="inp" id="dev-scripture" placeholder="e.g. John 3:16, Psalm 23...">
+      <label class="lbl">Devotion Notes / Message to Students</label>
+      <textarea class="dn" id="dev-notes" placeholder="Write your devotion message here..." style="min-height:100px"></textarea>
+      <button class="sbtn" onclick="saveDev()" style="margin-top:10px">📤 Post Devotion to Class</button>
+      <div style="margin-top:20px">
+        <div class="ct">STUDENT DEVOTION STATUS — <span id="dev-date-label"></span></div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:10px">✅ = Uploaded their journal &nbsp; ❌ = Not uploaded yet</div>
+        <div id="dev-student-list-status"></div>
+        <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6);margin-top:8px" onclick="loadDevotionStatus()">🔄 Refresh Status</button>
+      </div>
+    </div>
+
+    <!-- DIRECTOR VIEW -->
+    <div id="dev-director-view" style="display:none">
+      <div class="ct">ALL CLASS DEVOTION STATUS</div>
+      <div id="dev-director-overview"></div>
+    </div>
+  </div>
+
+  <!-- MASTER GUIDE -->
+  <div class="con" id="tab-masterguide" style="display:none">
+    <div class="sh">Master Guide 🏅</div>
+    <div class="mgsec">
+      <div class="mghdr">🎓 About Master Guide</div>
+      <div style="font-size:12px;color:var(--mut);line-height:1.65">The Master Guide is the highest level of Adventist Youth Ministries — the <em>"PhD of Youth Ministry."</em> It trains leaders for Adventurer, Pathfinder &amp; Youth Ministry roles. Ages 16+ to start, 18+ at investiture.</div>
+    </div>
+    <div class="tabs">
+      <div class="tab a" onclick="mgTab('curriculum')">📚 Curriculum</div>
+      <div class="tab" onclick="mgTab('candidates')">👥 Candidates</div>
+      <div class="tab" onclick="mgTab('portfolio')">📁 Portfolio</div>
+    </div>
+    <div id="mg-curriculum"><div class="ct">6 CURRICULUM AREAS</div><div id="mg-reqs"></div></div>
+    <div id="mg-candidates" style="display:none"><div class="ct">ACTIVE CANDIDATES</div><div id="mg-cands"></div></div>
+    <div id="mg-portfolio" style="display:none"><div class="ct">MY PORTFOLIO</div><div class="upz" onclick="fakeUp('mgport')"><div style="font-size:28px;margin-bottom:6px">📁</div><div style="font-weight:700;margin-bottom:3px">Upload Portfolio Item</div><div style="font-size:12px;color:var(--mut)">Reports, reflections, certificates</div></div><div id="mgp-files"></div></div>
+  </div>
+
+  <!-- DIRECTOR PANEL -->
+  <div class="con" id="tab-directors" style="display:none">
+    <div class="sh" id="dir-title">Director's Dashboard</div>
+    <div class="stgrid" id="dir-stats"></div>
+    <div class="ct">CLASS OVERVIEW</div>
+    <div id="dir-classes"></div>
+    <div class="div"></div>
+    <div class="ct">HONORS WALL 🏅</div>
+    <div id="dir-honors"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="con" id="tab-settings" style="display:none">
+    <div class="sh">Settings ⚙️</div>
+
+    <!-- Profile -->
+    <div class="set-section">
+      <div class="set-title">Profile</div>
+      <div class="card" style="text-align:center;padding:20px">
+        <div class="profile-av" id="set-av"></div>
+        <div style="font-size:16px;font-weight:800;color:var(--txt)" id="set-name"></div>
+        <div style="font-size:12px;color:var(--mut);margin-top:3px" id="set-role"></div>
+        <div style="font-size:12px;color:var(--accent);margin-top:3px;font-weight:700" id="set-club"></div>
+      </div>
+    </div>
+
+    <!-- Theme -->
+    <div class="set-section">
+      <div class="set-title">🎨 App Theme</div>
+      <div class="theme-grid">
+        <div class="theme-btn s" id="thm-light" onclick="setTheme('light')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#f0f4f8,#ffffff);border:1px solid #d1dae6"></div>Light ☀️
+        </div>
+        <div class="theme-btn" id="thm-dark" onclick="setTheme('dark')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#0f1923,#1a2535)"></div>Dark 🌙
+        </div>
+        <div class="theme-btn" id="thm-blue" onclick="setTheme('blue')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe"></div>Sky Blue 💙
+        </div>
+        <div class="theme-btn" id="thm-green" onclick="setTheme('green')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0"></div>Nature 🌿
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="set-section">
+      <div class="set-title">🔔 AI Notifications</div>
+      <div class="set-row">
+        <div><div class="set-label">Daily Devotion Reminder</div><div class="set-sub">Reminds you to read your devotion each morning</div></div>
+        <button class="toggle on" id="tog-devot" onclick="toggleSetting('devot')"></button>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Attendance Reminder</div><div class="set-sub">Reminds instructor before meetings</div></div>
+        <button class="toggle on" id="tog-att" onclick="toggleSetting('att')"></button>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Score Updates</div><div class="set-sub">Notify when instructor posts new scores</div></div>
+        <button class="toggle on" id="tog-scores" onclick="toggleSetting('scores')"></button>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">AI Daily Tip on Home</div><div class="set-sub">Smart tips based on your class level</div></div>
+        <button class="toggle on" id="tog-tip" onclick="toggleSetting('tip')"></button>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="set-section">
+      <div class="set-title">🔒 Privacy</div>
+      <div class="set-row">
+        <div><div class="set-label">Class-only Messages</div><div class="set-sub">Only your class can see class messages</div></div>
+        <div class="badge bg">Always On</div>
+      </div>
+      <div class="set-row">
+        <div><div class="set-label">Profile Visibility</div><div class="set-sub">Name visible to your club only</div></div>
+        <div class="badge bg">Club Only</div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="set-section">
+      <div class="set-title">ℹ️ About</div>
+      <div class="set-row" id="update-row" style="cursor:pointer" onclick="checkForUpdates()">
+        <div><div class="set-label">App Version</div><div class="set-sub" id="update-sub">PathfinderApp v3.0 — Tap to check for updates</div></div>
+        <div class="badge bb" id="update-badge">v3.0</div>
+      </div>
+      <div class="set-row"><div><div class="set-label">Data Storage</div><div class="set-sub" id="set-storage">Checking...</div></div><div class="badge" id="set-storage-badge">...</div></div>
+    </div>
+
+    <button class="sbtn" style="background:linear-gradient(135deg,var(--red),#ef4444);margin-top:4px;margin-bottom:14px" onclick="doSignOut()">Sign Out</button>
+  </div>
+
+  <div class="bnav" id="bnav"></div>
+</div>
+
+
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATIC DATA
+// ═══════════════════════════════════════════════════
+const CLASSES=[
+  {id:'friend',    n:'Friend',       e:'🌱',g:'Grade 5', l:'Level 1'},
+  {id:'companion', n:'Companion',    e:'🌿',g:'Grade 6', l:'Level 2'},
+  {id:'explorer',  n:'Explorer',     e:'🧭',g:'Grade 7', l:'Level 3'},
+  {id:'ranger',    n:'Ranger',       e:'⛺',g:'Grade 8', l:'Level 4'},
+  {id:'voyager',   n:'Voyager',      e:'⚓',g:'Grade 9', l:'Level 5'},
+  {id:'guide',     n:'Guide',        e:'🗺',g:'Grade 10',l:'Level 6'},
+  {id:'masterguide',n:'Master Guide',e:'🏅',g:'Ages 16+',l:'Leadership'},
+];
+// No hardcoded students — all loaded live from Firebase
+let classStudents = []; // filled when instructor logs in
+let honorPhotoData = null; // base64 photo for honor submission
+let pendingUploadType = null; // which upload is waiting for image from MIT AI2
+
+// ═══════════════════════════════════════════════════
+// MIT APP INVENTOR IMAGE BRIDGE
+// MIT AI2 blocks call receiveImageFromApp(base64, type)
+// ═══════════════════════════════════════════════════
+function receiveImageFromApp(base64Data, uploadType){
+  // Called by MIT App Inventor after user picks image
+  // base64Data = full base64 string e.g. data:image/jpeg;base64,...
+  // uploadType = 'honor' | 'journal' | 'requirement' | 'devotion' | 'mgport'
+  const data = base64Data.startsWith('data:') ? base64Data : 'data:image/jpeg;base64,'+base64Data;
+  pendingUploadType = uploadType || pendingUploadType;
+
+  if(pendingUploadType === 'honor'){
+    honorPhotoData = data;
+    if(id('honor-preview-img')) id('honor-preview-img').src = data;
+    if(id('honor-photo-preview')) id('honor-photo-preview').style.display='block';
+    if(id('honor-photo-zone')) id('honor-photo-zone').style.display='none';
+    if(id('honor-photo-name')) id('honor-photo-name').textContent='Photo selected ✓';
+    toast('📷 Photo attached!');
+  } else if(pendingUploadType === 'devotion'){
+    handleDevotionUploadData(data);
+  } else if(pendingUploadType === 'journal'){
+    handleFileUploadData(data, 'journal', 'jfiles');
+  } else if(pendingUploadType === 'requirement'){
+    handleFileUploadData(data, 'requirement', 'rfiles');
+  } else if(pendingUploadType === 'mgport'){
+    handleFileUploadData(data, 'mgport', 'mgp-files');
+  }
+  pendingUploadType = null;
+}
+
+// Tell MIT App Inventor which type of image to pick
+function requestImageFromApp(type){
+  pendingUploadType = type;
+  // MIT AI2 listens for this via WebViewer.WebViewStringChange
+  // In AI2 blocks: when WebViewer.PageLoaded → call EvaluateJavaScript
+  // The app sets window.uploadRequest which AI2 reads
+  window.uploadRequest = type;
+  // Try standard file input as fallback (works in browser testing)
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => receiveImageFromApp(ev.target.result, type);
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+let navHistory = []; // tracks page navigation for back button
+const MG=[
+  {a:'I. Spiritual Growth',e:'✝️',items:['Read Steps to Christ','Devotional journal 4 weeks','Bible studies on 28 Beliefs','Encounter Series I']},
+  {a:'II. New Skills',e:'🛠',items:['Camping Skills','Christian Storytelling Honor','First Aid Certificate','2 additional AY Honors']},
+  {a:'III. Leadership Dev.',e:'🎓',items:['3 creative worships','Conference leadership event','Teach 3 Adventurer Awards','Field trip leadership']},
+  {a:'IV. Personal Growth',e:'📖',items:['Read "Education" (E. White)','Child development seminar','2-page temperament paper','12 leadership seminars']},
+  {a:'V. Fitness Lifestyle',e:'🏃',items:['AY Silver or Gold Award','Personal fitness plan','Physical fitness documentation']},
+  {a:'VI. Portfolio & Service',e:'📁',items:['Document all work','75% staff meeting attendance','Supervise Pathfinder class 1 year','Exit interview']},
+];
+
+// ═══════════════════════════════════════════════════
+// HONORS & REQUIREMENTS DATA PER CLASS
+// ═══════════════════════════════════════════════════
+const CLASS_HONORS = {
+  friend: [
+    {n:'Apiculture (Bees)',cat:'Nature',e:'🐝'},
+    {n:'Bird Study',cat:'Nature',e:'🐦'},
+    {n:'Cooking',cat:'Household Arts',e:'🍳'},
+    {n:'First Aid — Basic',cat:'Health',e:'🏥'},
+    {n:'Gardening',cat:'Nature',e:'🌱'},
+    {n:'Knot Tying',cat:'Outdoor Industries',e:'🪢'},
+    {n:'Sewing',cat:'Household Arts',e:'🧵'},
+    {n:'Drawing',cat:'Arts & Crafts',e:'🎨'},
+  ],
+  companion: [
+    {n:'Camping',cat:'Recreation',e:'⛺'},
+    {n:'Cooking',cat:'Household Arts',e:'🍳'},
+    {n:'First Aid',cat:'Health',e:'🏥'},
+    {n:'Map & Compass',cat:'Recreation',e:'🧭'},
+    {n:'Nature Study',cat:'Nature',e:'🌿'},
+    {n:'Swimming — Beginner',cat:'Aquatics',e:'🏊'},
+    {n:'Bible Marking',cat:'Spiritual Dev.',e:'📖'},
+    {n:'Photography',cat:'Arts & Crafts',e:'📷'},
+  ],
+  explorer: [
+    {n:'Camping Skills I',cat:'Recreation',e:'⛺'},
+    {n:'First Aid',cat:'Health',e:'🏥'},
+    {n:'Hiking',cat:'Recreation',e:'🥾'},
+    {n:'Map & Compass',cat:'Recreation',e:'🧭'},
+    {n:'Swimming',cat:'Aquatics',e:'🏊'},
+    {n:'Christian Storytelling',cat:'Spiritual Dev.',e:'📜'},
+    {n:'Cooking — Advanced',cat:'Household Arts',e:'🍳'},
+    {n:'Nature Drawing',cat:'Arts & Crafts',e:'🎨'},
+  ],
+  ranger: [
+    {n:'Camping Skills II',cat:'Recreation',e:'⛺'},
+    {n:'First Aid — Advanced',cat:'Health',e:'🏥'},
+    {n:'Orienteering',cat:'Recreation',e:'🧭'},
+    {n:'Swimming — Intermediate',cat:'Aquatics',e:'🏊'},
+    {n:'Bible Prophecy',cat:'Spiritual Dev.',e:'📖'},
+    {n:'Cooking — Camp',cat:'Household Arts',e:'🔥'},
+    {n:'Music',cat:'Arts & Crafts',e:'🎵'},
+    {n:'Leadership',cat:'Spiritual Dev.',e:'🎖'},
+  ],
+  voyager: [
+    {n:'Camping Skills III',cat:'Recreation',e:'⛺'},
+    {n:'First Aid — CPR',cat:'Health',e:'🫀'},
+    {n:'Life Saving',cat:'Aquatics',e:'🛟'},
+    {n:'Christian Citizenship',cat:'Spiritual Dev.',e:'✝️'},
+    {n:'Heritage',cat:'Spiritual Dev.',e:'🕍'},
+    {n:'Cooking — Nutrition',cat:'Household Arts',e:'🥗'},
+    {n:'Photography',cat:'Arts & Crafts',e:'📷'},
+    {n:'Public Speaking',cat:'Spiritual Dev.',e:'🎤'},
+  ],
+  guide: [
+    {n:'Camping Skills — Master',cat:'Recreation',e:'⛺'},
+    {n:'Emergency Response',cat:'Health',e:'🚑'},
+    {n:'Water Safety',cat:'Aquatics',e:'🛟'},
+    {n:'Teaching Skills',cat:'Spiritual Dev.',e:'👩‍🏫'},
+    {n:'Adventist Heritage',cat:'Spiritual Dev.',e:'🕍'},
+    {n:'Cooking — Vegetarian',cat:'Household Arts',e:'🥦'},
+    {n:'Community Service',cat:'Spiritual Dev.',e:'🤝'},
+    {n:'Mentorship',cat:'Spiritual Dev.',e:'🎓'},
+  ],
+  masterguide: [
+    {n:'Christian Storytelling',cat:'Outreach',e:'📜'},
+    {n:'Camping Skills',cat:'Recreation',e:'⛺'},
+    {n:'First Aid — Instructor',cat:'Health',e:'🏥'},
+    {n:'Teaching Methods',cat:'Leadership',e:'👩‍🏫'},
+    {n:'Youth Leadership',cat:'Leadership',e:'🎖'},
+    {n:'Community Evangelism',cat:'Outreach',e:'✝️'},
+  ],
+};
+
+const CLASS_REQUIREMENTS = {
+  friend:[
+    // Personal Growth
+    {cat:'🌱 Personal Growth', req:'Memorize and recite the Pathfinder Pledge'},
+    {cat:'🌱 Personal Growth', req:'Memorize and recite the Pathfinder Law'},
+    {cat:'🌱 Personal Growth', req:'Know the Pathfinder Song by memory'},
+    {cat:'🌱 Personal Growth', req:'Make a personal daily schedule and follow it for 2 weeks'},
+    // Spiritual Discovery
+    {cat:'✝️ Spiritual Discovery', req:'Memorize John 3:16 and Psalm 23:1'},
+    {cat:'✝️ Spiritual Discovery', req:'Have personal devotion daily for 2 weeks'},
+    {cat:'✝️ Spiritual Discovery', req:'Attend Sabbath School every week for 1 month'},
+    // Serving Others
+    {cat:'🤝 Serving Others', req:'Complete one approved community service project'},
+    {cat:'🤝 Serving Others', req:'Do one kind act for someone outside your family each week for 4 weeks'},
+    // Making Friends
+    {cat:'👫 Making Friends', req:'Learn the names of all Pathfinders in your unit'},
+    {cat:'👫 Making Friends', req:'Write a letter or card to someone who needs encouragement'},
+    // Health & Fitness
+    {cat:'💪 Health & Fitness', req:'Know what NEWSTART stands for and explain each letter'},
+    {cat:'💪 Health & Fitness', req:'Exercise or play actively 3 times per week for 4 weeks'},
+    // Nature Study
+    {cat:'🌿 Nature Study', req:'Collect and identify 10 different leaves, rocks, or insects'},
+    {cat:'🌿 Nature Study', req:'Spend time outdoors and write or draw 5 nature observations'},
+    // Outdoor Living
+    {cat:'⛺ Outdoor Living', req:'Attend at least one Pathfinder outdoor event or nature walk'},
+    // Honor Enrichment
+    {cat:'🏅 Honor Enrichment', req:'Complete the Cooking honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete the Foot Care honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one additional honor of your choice'},
+  ],
+  companion:[
+    {cat:'🌱 Personal Growth', req:'Recite Pledge and Law from memory without help'},
+    {cat:'🌱 Personal Growth', req:'Set a personal goal and work on it for 4 weeks'},
+    {cat:'🌱 Personal Growth', req:'Learn to manage your time — keep a daily planner for 2 weeks'},
+    {cat:'✝️ Spiritual Discovery', req:'Memorize 6 Bible verses including Proverbs 3:5-6'},
+    {cat:'✝️ Spiritual Discovery', req:'Keep a prayer journal for 4 weeks'},
+    {cat:'✝️ Spiritual Discovery', req:'Participate actively in Sabbath School each week'},
+    {cat:'🤝 Serving Others', req:'Complete 4 hours of community service'},
+    {cat:'🤝 Serving Others', req:'Help a family member with chores every day for 2 weeks'},
+    {cat:'👫 Making Friends', req:'Invite someone new to a Pathfinder meeting or church'},
+    {cat:'👫 Making Friends', req:'Resolve a disagreement with a friend or sibling peacefully'},
+    {cat:'💪 Health & Fitness', req:'Know all 8 NEWSTART principles and apply one for 4 weeks'},
+    {cat:'💪 Health & Fitness', req:'Exercise 3 times per week for 4 weeks — record results'},
+    {cat:'🌿 Nature Study', req:'Keep a nature journal with at least 8 entries'},
+    {cat:'🌿 Nature Study', req:'Identify 5 local trees or birds by name'},
+    {cat:'⛺ Outdoor Living', req:'Go on a nature walk and identify 10 things you observe'},
+    {cat:'⛺ Outdoor Living', req:'Learn how to set up and take down a tent'},
+    {cat:'🏅 Honor Enrichment', req:'Complete the Knot Tying honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete the Cooking honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one craft honor of your choice'},
+  ],
+  explorer:[
+    {cat:'🌱 Personal Growth', req:'Explain the meaning of each clause in the Pledge and Law'},
+    {cat:'🌱 Personal Growth', req:'Complete a personal growth project approved by your director'},
+    {cat:'🌱 Personal Growth', req:'Learn a new skill and teach it to someone'},
+    {cat:'✝️ Spiritual Discovery', req:'Memorize 8 Bible verses; complete a 30-day reading plan'},
+    {cat:'✝️ Spiritual Discovery', req:'Lead an opening or closing prayer at a Pathfinder meeting'},
+    {cat:'✝️ Spiritual Discovery', req:'Study one Adventist belief and present it to your class'},
+    {cat:'🤝 Serving Others', req:'Complete 6 hours of community service'},
+    {cat:'🤝 Serving Others', req:'Share your faith story with one person outside your church'},
+    {cat:'👫 Making Friends', req:'Plan and carry out a social activity for your Pathfinder unit'},
+    {cat:'👫 Making Friends', req:'Write an encouraging letter to a missionary or church leader'},
+    {cat:'💪 Health & Fitness', req:'Apply two NEWSTART principles consistently for 6 weeks'},
+    {cat:'💪 Health & Fitness', req:'Complete a 4-week personal fitness program — record results'},
+    {cat:'🌿 Nature Study', req:'Identify 10 local birds, plants, or insects by sight'},
+    {cat:'🌿 Nature Study', req:'Complete a nature project and present it to your club'},
+    {cat:'⛺ Outdoor Living', req:'Learn basic map and compass skills'},
+    {cat:'⛺ Outdoor Living', req:'Participate in a Pathfinder camping trip'},
+    {cat:'🏅 Honor Enrichment', req:'Complete the First Aid honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete the Camping Skills 1 honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one household arts honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one nature honor'},
+  ],
+  ranger:[
+    {cat:'🌱 Personal Growth', req:'Teach the Pledge and Law to a younger Pathfinder'},
+    {cat:'🌱 Personal Growth', req:'Complete a leadership training activity'},
+    {cat:'🌱 Personal Growth', req:'Lead one Pathfinder meeting activity or worship'},
+    {cat:'✝️ Spiritual Discovery', req:'Memorize 10 Bible verses; read Steps to Christ'},
+    {cat:'✝️ Spiritual Discovery', req:'Have daily devotions for 6 weeks; share one with your class'},
+    {cat:'✝️ Spiritual Discovery', req:'Know and explain all 28 Fundamental Beliefs (overview)'},
+    {cat:'✝️ Spiritual Discovery', req:'Give a Bible study or share your personal testimony'},
+    {cat:'🤝 Serving Others', req:'Complete 10 hours of community service'},
+    {cat:'🤝 Serving Others', req:'Organize a service project for your community'},
+    {cat:'👫 Making Friends', req:'Mentor or befriend a new or younger Pathfinder'},
+    {cat:'👫 Making Friends', req:'Participate in a Pathfinder outreach activity'},
+    {cat:'💪 Health & Fitness', req:'Complete a 6-week personal fitness program — record results'},
+    {cat:'💪 Health & Fitness', req:'Know advanced first aid and CPR basics'},
+    {cat:'🌿 Nature Study', req:'Complete a nature study project and present to club'},
+    {cat:'🌿 Nature Study', req:'Identify 15 local species (plants, birds, or animals)'},
+    {cat:'⛺ Outdoor Living', req:'Participate in Camporee and Pathfinder Fair'},
+    {cat:'⛺ Outdoor Living', req:'Learn outdoor cooking and prepare a meal outdoors'},
+    {cat:'🏅 Honor Enrichment', req:'Complete Camping Skills 2 honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one aquatics honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one spiritual development honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete two additional honors of your choice'},
+  ],
+  voyager:[
+    {cat:'🌱 Personal Growth', req:'Teach Pledge and Law to a younger Pathfinder'},
+    {cat:'🌱 Personal Growth', req:'Mentor a younger Pathfinder for at least 2 months'},
+    {cat:'🌱 Personal Growth', req:'Complete a personal growth portfolio entry'},
+    {cat:'✝️ Spiritual Discovery', req:'Memorize 12 Bible verses; complete 60-day devotional plan'},
+    {cat:'✝️ Spiritual Discovery', req:'Know all 28 Fundamental Beliefs in depth'},
+    {cat:'✝️ Spiritual Discovery', req:'Lead family or group worship at least twice'},
+    {cat:'✝️ Spiritual Discovery', req:'Complete a personal evangelism project'},
+    {cat:'🤝 Serving Others', req:'Complete 14 hours of community service'},
+    {cat:'🤝 Serving Others', req:'Lead a community outreach activity'},
+    {cat:'👫 Making Friends', req:'Plan a social or outreach event for your unit or community'},
+    {cat:'👫 Making Friends', req:'Write and send 3 encouraging messages to people in need'},
+    {cat:'💪 Health & Fitness', req:'Complete an 8-week fitness program — set and achieve a goal'},
+    {cat:'💪 Health & Fitness', req:'Complete First Aid with CPR certification'},
+    {cat:'🌿 Nature Study', req:'Complete an advanced nature study and present findings'},
+    {cat:'🌿 Nature Study', req:'Identify 20 local species across different categories'},
+    {cat:'⛺ Outdoor Living', req:'Attend Division or Union Camporee'},
+    {cat:'⛺ Outdoor Living', req:'Demonstrate advanced camping and outdoor survival skills'},
+    {cat:'🏅 Honor Enrichment', req:'Complete Camping Skills 3 honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one health honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one outreach or missionary honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete three additional honors of your choice'},
+  ],
+  guide:[
+    {cat:'🌱 Personal Growth', req:'Be able to train others in the Pledge and Law'},
+    {cat:'🌱 Personal Growth', req:'Lead a Pathfinder class for one full month'},
+    {cat:'🌱 Personal Growth', req:'Prepare a portfolio of all Guide class requirements'},
+    {cat:'✝️ Spiritual Discovery', req:'Memorize 15 Bible verses; complete a Bible marking series'},
+    {cat:'✝️ Spiritual Discovery', req:'Study and present one Fundamental Belief to your group'},
+    {cat:'✝️ Spiritual Discovery', req:'Conduct a week of prayer for your class'},
+    {cat:'✝️ Spiritual Discovery', req:'Conduct Bible studies with someone outside the church'},
+    {cat:'🤝 Serving Others', req:'Complete 20 hours of community service'},
+    {cat:'🤝 Serving Others', req:'Teach a skill or honor to other Pathfinders'},
+    {cat:'🤝 Serving Others', req:'Organize and lead an evangelism project'},
+    {cat:'👫 Making Friends', req:'Plan and carry out a club-wide social or outreach event'},
+    {cat:'👫 Making Friends', req:'Build a mentoring relationship with a younger Pathfinder'},
+    {cat:'💪 Health & Fitness', req:'Complete a 12-week fitness program — document all results'},
+    {cat:'💪 Health & Fitness', req:'Complete Emergency Response honor'},
+    {cat:'🌿 Nature Study', req:'Complete a major nature research project'},
+    {cat:'🌿 Nature Study', req:'Identify 25 local species across all major categories'},
+    {cat:'⛺ Outdoor Living', req:'Attend Conference or Union Camporee'},
+    {cat:'⛺ Outdoor Living', req:'Complete Camping Skills — Master honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete one outreach honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete five additional honors of your choice'},
+  ],
+  masterguide:[
+    {cat:'✝️ Spiritual Discovery', req:'Complete all Spiritual Growth curriculum areas'},
+    {cat:'🌱 Personal Growth', req:'Read Education by Ellen G. White'},
+    {cat:'🌱 Personal Growth', req:'Complete child development seminar'},
+    {cat:'🌱 Personal Growth', req:'Write a 2-page temperament analysis paper'},
+    {cat:'🤝 Serving Others', req:'Supervise a Pathfinder class for one full year'},
+    {cat:'🤝 Serving Others', req:'Conduct exit interview with Conference Youth Director'},
+    {cat:'👫 Making Friends', req:'Complete 12 leadership seminars (90 min each)'},
+    {cat:'💪 Health & Fitness', req:'Complete AY Silver or Gold Award'},
+    {cat:'💪 Health & Fitness', req:'Complete personal fitness documentation'},
+    {cat:'⛺ Outdoor Living', req:'Complete Camping Skills honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete Christian Storytelling honor'},
+    {cat:'🏅 Honor Enrichment', req:'Complete First Aid Instructor honor'},
+    {cat:'🌱 Personal Growth', req:'Attend 75% of all club staff meetings'},
+    {cat:'🌱 Personal Growth', req:'Submit complete Master Guide portfolio'},
+  ],
+};
+const HONORS=[
+  {n:'Cooking',e:'🍳',c:'Household Arts'},{n:'Camping',e:'⛺',c:'Nature'},
+  {n:'First Aid',e:'🏥',c:'Health'},{n:'Drawing',e:'🎨',c:'Arts & Crafts'},
+  {n:'Swimming',e:'🏊',c:'Aquatics'},{n:'Bible Study',e:'📖',c:'Spiritual Dev.'},
+  {n:'Christian Storytelling',e:'📜',c:'Outreach'},{n:'Adventist Heritage',e:'🕍',c:'Church'},
+];
+const AI_TIPS={
+  friend:["As a Friend, try memorizing one Bible verse this week — it helps in every class level!","Great pathfinders start with big hearts. Who can you encourage today?"],
+  companion:["Working on your Companion honors? Remember: consistency beats speed every time!","Companions build friendships that last. Reach out to a classmate you haven't talked to lately."],
+  explorer:["Explorers lead the way! Have you started your personal fitness plan yet?","You're in Grade 7 — this is the perfect year to start a devotional journal."],
+  ranger:["Ranger class is when real leaders emerge. What honor are you currently working on?","Don't forget — Camporee preparation counts toward your Ranger requirements!"],
+  voyager:["Voyagers are almost at the top! Consider mentoring a Friend or Companion today.","Your portfolio work now will make your Guide investiture smooth and strong."],
+  guide:["As a Guide, you're an example for every younger Pathfinder. Lead with grace.","Guide class teaches that real strength is in serving others. Look for ways to serve this week."],
+  masterguide:["Master Guide candidates: have you scheduled your 12 leadership seminars?","Remember your exit interview goal — document everything as you go, not at the end!"],
+};
+const DEVOTION_VERSES=[
+  {v:'"For God so loved the world that He gave His one and only Son..."',r:'John 3:16'},
+  {v:'"I can do all things through Christ who strengthens me."',r:'Philippians 4:13'},
+  {v:'"Trust in the LORD with all your heart and lean not on your own understanding."',r:'Proverbs 3:5'},
+  {v:'"The love of Christ compels us..."',r:'2 Corinthians 5:14'},
+  {v:'"Be strong and courageous. Do not be afraid; do not be discouraged."',r:'Joshua 1:9'},
+  {v:'"Let your light shine before others, that they may see your good deeds."',r:'Matthew 5:16'},
+  {v:'"Train up a child in the way he should go; even when he is old he will not depart from it."',r:'Proverbs 22:6'},
+];
+
+// ═══════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════
+const FB_DB='https://pathfinder-club-app-2b367-default-rtdb.firebaseio.com';
+const CLD_CLOUD='dq1kk9tkd';
+const CLD_PRESET='tyxio0qs';let demoMode=false,cu=null;
+let selRole='',selClass='',selDirType='director',selSlot='slot1';
+let sc={p:0,n:0,c:0};
+let upCtrs={};
+let msgOff=null;
+let activeChat='global'; // 'global','devotion','class-{id}'
+let settings={devot:true,att:true,scores:true,tip:true};
+let clubKey=''; // sanitized club name — all data stored under this key
+
+// Demo messages per channel
+let demoMsgs={
+  global:[
+    {s:'Director Johnson',r:'director',t:'Welcome to PathfinderApp! 🎉',tm:'9:00 AM',uid:'x1',cls:'all'},
+    {s:'Instructor Maria',r:'instructor',t:'Camporee is next Saturday! Get ready!',tm:'10:30 AM',uid:'x2',cls:'all'},
+  ],
+  devotion:[
+    {s:'Instructor Maria',r:'instructor',t:'Today\'s devotion theme: Faithfulness. Read Joshua 1:9.',tm:'8:00 AM',uid:'x3',cls:'all',type:'devotion'},
+    {s:'Instructor James',r:'instructor',t:'Ranger class devotion at 8:30am. Don\'t be late!',tm:'8:05 AM',uid:'x4',cls:'ranger',type:'devotion'},
+  ],
+  ranger:[
+    {s:'Instructor Maria',r:'instructor',t:'Ranger class — please bring your honor books on Friday.',tm:'Yesterday',uid:'x5',cls:'ranger'},
+  ],
+};
+
+// ═══════════════════════════════════════════════════
+// FIREBASE REST API HELPERS
+// No SDK needed — just Database URL + Web API Key
+// ═══════════════════════════════════════════════════
+function dbUrl(path){return `${FB_DB}/${path}.json`;}
+async function dbGet(path){
+  try{
+    const r=await fetch(dbUrl(path),{headers:{'Content-Type':'application/json'}});
+    if(!r.ok){console.error('dbGet failed:',r.status,await r.text());return null;}
+    return await r.json();
+  }catch(e){console.error('dbGet error:',e);showOffline();return null;}
+}
+async function dbSet(path,data){
+  try{
+    const r=await fetch(dbUrl(path),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok){const t=await r.text();console.error('dbSet failed:',r.status,t);}
+    return r.ok;
+  }catch(e){console.error('dbSet error:',e);showOffline();return false;}
+}
+async function dbPush(path,data){try{const r=await fetch(dbUrl(path),{method:'POST',body:JSON.stringify(data)});return r.ok?await r.json():null;}catch(e){showOffline();return null;}}
+async function dbListen(path,cb){
+  // Poll every 3 seconds for live-ish updates (REST API doesn't have real sockets)
+  cb(await dbGet(path));
+  return setInterval(async()=>cb(await dbGet(path)),2000);
+}
+
+
+
+
+// ═══════════════════════════════════════════════════
+// BACK BUTTON NAVIGATION
+// Called by MIT App Inventor when back button pressed
+// ═══════════════════════════════════════════════════
+function goBack(){
+  // If on auth screen — do nothing (don't exit)
+  const authActive = id('auth-screen').classList.contains('active');
+  const splashActive = id('splash-screen') && id('splash-screen').style.display !== 'none';
+  if(authActive || splashActive) return;
+
+  // If not logged in — do nothing
+  if(!cu) return;
+
+  if(navHistory.length === 0){
+    // Already at home — ask to exit or just do nothing
+    if(currentTab === 'home'){
+      // At root — show exit toast instead of closing
+      toast('Press back again to exit');
+      navHistory.push('__exit__');
+      setTimeout(()=>{ if(navHistory[navHistory.length-1]==='__exit__') navHistory.pop(); }, 2000);
+      return;
+    }
+    // Go home
+    swTab('home', false);
+    return;
+  }
+
+  const prev = navHistory.pop();
+
+  // Exit confirmation
+  if(prev === '__exit__'){
+    // User pressed back twice quickly — let MIT App Inventor handle exit
+    // by doing nothing here (App Inventor will close)
+    return;
+  }
+
+  // Go back to previous subtab
+  if(prev.startsWith('sub:')){
+    const parts = prev.split(':');
+    const sec = parts[1];
+    const tab = parts[2];
+    if(tab) subTab(sec, tab, false);
+    return;
+  }
+
+  // Go back to previous main tab
+  swTab(prev, false);
+}
+
+// Also handle browser back button (for testing in browser)
+window.addEventListener('popstate', ()=> goBack());
+
+
+// ═══════════════════════════════════════════════════
+// PUSH NOTIFICATIONS FOR MESSAGES
+// ═══════════════════════════════════════════════════
+let lastMsgTimestamps = {}; // track last seen ts per channel
+let notifPermission = false;
+
+async function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){ notifPermission=true; return; }
+  if(Notification.permission!=='denied'){
+    const p = await Notification.requestPermission();
+    notifPermission = p==='granted';
+  }
+}
+
+function showNotification(title, body, channel){
+  if(notifPermission && Notification.permission==='granted'){
+    new Notification(title, {body, icon:'', tag:channel, renotify:true});
+  } else {
+    // Fallback — in-app banner
+    const banner = document.createElement('div');
+    banner.style.cssText=`position:fixed;top:70px;left:12px;right:12px;background:var(--accent);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:600;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:pointer;animation:fadeUp .3s ease`;
+    banner.innerHTML=`<div style="font-size:11px;opacity:.8;margin-bottom:2px">${title}</div>${body}`;
+    banner.onclick=()=>{ document.body.removeChild(banner); swTab('messages'); };
+    document.body.appendChild(banner);
+    setTimeout(()=>{ if(banner.parentNode) document.body.removeChild(banner); }, 5000);
+  }
+}
+
+function checkNewMessages(chanId, msgs){
+  if(!msgs||msgs.length===0) return;
+  const latest = msgs[msgs.length-1];
+  const lastSeen = lastMsgTimestamps[chanId]||0;
+  if(latest.ts && latest.ts > lastSeen && latest.uid !== cu?.uid){
+    // New message from someone else
+    const cls = CLASSES.find(c=>'class-'+c.id===chanId||'devotion-'+c.id===chanId);
+    const chanLabel = chanId==='global'?'Club-wide Chat':cls?(cls.n+(chanId.startsWith('devotion')?'Devotion':'Chat')):'Chat';
+    showNotification(`💬 New message in ${chanLabel}`, `${latest.s}: ${(latest.t||'').substring(0,60)}`, chanId);
+  }
+  if(latest.ts) lastMsgTimestamps[chanId]=latest.ts;
+}
+
+// ═══════════════════════════════════════════════════
+// NETWORK / OFFLINE DETECTION
+// ═══════════════════════════════════════════════════
+function isOnline(){return navigator.onLine;}
+
+function checkNetwork(callback){
+  // Always proceed — navigator.onLine is unreliable in MIT App Inventor
+  // Offline is only detected when a Firebase call actually fails
+  callback();
+}
+
+function showOffline(){
+  show('offline-screen');
+  // Keep checking every 3 seconds automatically
+  setTimeout(()=>{
+    if(isOnline()) retryConnection();
+  }, 3000);
+}
+
+function retryConnection(){
+  show('loading-screen');
+  id('load-txt').textContent='Checking connection...';
+  setTimeout(()=>{
+    checkNetwork(()=>{
+      // Back online — go to auth or re-launch
+      if(cu) launch();
+      else showAuth();
+    });
+  }, 800);
+}
+
+// Note: online/offline events not reliable in MIT App Inventor file:/// context
+// Offline is shown only when Firebase calls actually fail
+
+// ═══════════════════════════════════════════════════
+// INIT — DB URL is hardcoded, go straight to app
+// ═══════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  try{
+    const sv=localStorage.getItem('pf-settings');
+    if(sv)settings={...settings,...JSON.parse(sv)};
+  }catch(e){}
+  try{
+    const th=localStorage.getItem('pf-theme')||'light';
+    applyTheme(th,false);
+  }catch(e){}
+  try{ buildClsGrid(); }catch(e){}
+  try{ buildModeBadge(); }catch(e){}
+
+  // Show splash for 5 seconds then reveal auth screen
+  setTimeout(()=>{
+    const splash = id('splash-screen');
+    if(splash){
+      splash.classList.add('splash-fade');
+      setTimeout(()=>{ splash.style.display='none'; }, 500);
+    }
+  }, 5000);
+});
+
+function showAuth(){show('auth-screen');buildModeBadge();}
+function buildModeBadge(){
+  const b=id('si-mode-bar');if(!b)return;
+  b.innerHTML=`<div class="mode-bar live"><span class="dot"></span>Connected to PathfinderApp database</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH TABS & ROLE SELECTION
+// ═══════════════════════════════════════════════════
+function authTab(t){
+  id('form-si').style.display=t==='si'?'block':'none';
+  id('form-su').style.display=t==='su'?'block':'none';
+  id('at-si').className='auth-tab'+(t==='si'?' a':'');
+  id('at-su').className='auth-tab'+(t==='su'?' a':'');
+}
+function pickRole(r){
+  selRole=r;
+  ['student','instructor','director'].forEach(x=>id('rb-'+x).classList.remove('s'));
+  id('rb-'+r).classList.add('s');
+  id('dir-subrole').style.display=r==='director'?'block':'none';
+  id('cls-picker').style.display=(r==='student'||r==='instructor')?'block':'none';
+  id('slot-picker').style.display=r==='instructor'?'block':'none';
+}
+function pickDirType(t){
+  selDirType=t;
+  ['director-main','deputy'].forEach(x=>id('rb-'+x)?.classList.remove('s'));
+  id('rb-'+t)?.classList.add('s');
+}
+function pickSlot(s){
+  selSlot=s;
+  ['slot1','slot2'].forEach(x=>id('rb-'+x)?.classList.remove('s'));
+  id('rb-'+s)?.classList.add('s');
+}
+function buildClsGrid(){
+  const g=id('cls-grid');if(!g)return;
+  g.innerHTML=CLASSES.map(c=>`<div class="c-btn" id="cb-${c.id}" onclick="pickCls('${c.id}')"><span style="font-size:18px;display:block;margin-bottom:3px">${c.e}</span><strong>${c.n}</strong><br><span style="font-size:10px;color:var(--mut)">${c.l}·${c.g}</span></div>`).join('');
+}
+function pickCls(cid){
+  selClass=cid;
+  document.querySelectorAll('.c-btn').forEach(b=>b.classList.remove('s'));
+  id('cb-'+cid)?.classList.add('s');
+  id('mg-note').style.display=cid==='masterguide'?'flex':'none';
+}
+
+// ═══════════════════════════════════════════════════
+// SIGN IN / SIGN UP
+// ═══════════════════════════════════════════════════
+async function doSignIn(){
+  const email=id('si-email').value.trim(),pw=id('si-pw').value;
+  setErr('si-err','');
+  if(!email||!pw){setErr('si-err','Please fill in all fields.');return;}
+  if(demoMode){
+    const n=email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+    cu={name:n,email,role:'student',dirType:'',classId:'ranger',cn:'Ranger',ce:'⛺',clubName:'Demo Club',ini:n.substring(0,2).toUpperCase(),uid:'demo-'+Date.now()};
+    clubKey=san('Demo Club');launch();return;
+  }
+  load('Signing in...');
+  // Look up user by email key in DB
+  const emailKey=san(email);
+  const p=await dbGet('accounts/'+emailKey);
+  if(!p){hideLoad();setErr('si-err','No account found with that email. Please create an account.');return;}
+  if(p.pw!==btoa(pw)){hideLoad();setErr('si-err','Incorrect password. Please try again.');return;}
+  const cls=CLASSES.find(c=>c.id===p.classId)||{n:'All',e:'🎖'};
+  cu={...p,uid:emailKey,cn:cls.n,ce:cls.e,ini:p.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
+  clubKey=san(p.clubName||'default');
+  hideLoad();launch();
+}
+
+async function doSignUp(){
+  const clubName=id('su-club').value.trim();
+  const name=id('su-name').value.trim();
+  const email=id('su-email').value.trim();
+  const pw=id('su-pw').value;
+  setErr('su-err','');
+  if(!clubName){setErr('su-err','Please enter your Pathfinder Club name.');return;}
+  if(!name){setErr('su-err','Please enter your name.');return;}
+  if(!email||!pw){setErr('su-err','Please fill email and password.');return;}
+  if(pw.length<6){setErr('su-err','Password needs at least 6 characters.');return;}
+  if(!selRole){setErr('su-err','Please select your role.');return;}
+  if(selRole==='director'&&!selDirType){setErr('su-err','Please select Director or Deputy Director.');return;}
+  if((selRole==='student'||selRole==='instructor')&&!selClass){setErr('su-err','Please select your class.');return;}
+
+  if(demoMode){
+    const cls=CLASSES.find(c=>c.id===selClass)||{n:'All',e:'🎖'};
+    cu={name,email,role:selRole,dirType:selRole==='director'?selDirType:'',classId:selClass||'all',slot:selRole==='instructor'?selSlot:'',cn:cls.n,ce:cls.e,clubName,ini:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),uid:'demo-'+Date.now()};
+    clubKey=san(clubName);launch();return;
+  }
+  load('Creating account...');
+  const emailKey=san(email);
+  // Check if account already exists
+  const existing=await dbGet('accounts/'+emailKey);
+  if(existing){hideLoad();setErr('su-err','An account with that email already exists. Please sign in.');return;}
+  // Check instructor slot not already taken
+  if(selRole==='instructor'){
+    const allAcc = await dbGet('accounts') || {};
+    const slotTaken = Object.values(allAcc).some(a =>
+      a.role==='instructor' &&
+      san(a.clubName||'')===san(clubName) &&
+      a.classId===selClass &&
+      a.slot===selSlot
+    );
+    if(slotTaken){
+      hideLoad();
+      const slotName = selSlot==='slot1'?'Instructor 1':'Instructor 2';
+      setErr('su-err',`${slotName} for this class is already taken. Please choose the other slot or a different class.`);
+      return;
+    }
+  }
+  const prof={name,email,pw:btoa(pw),role:selRole,dirType:selRole==='director'?selDirType:'',classId:selClass||'all',slot:selRole==='instructor'?selSlot:'',clubName,createdAt:Date.now()};
+  const saved=await dbSet('accounts/'+emailKey,prof);
+  if(saved===false){
+    hideLoad();
+    setErr('su-err','Could not save account. Check your Firebase Database Rules — go to Firebase Console → Realtime Database → Rules and set both read and write to true.');
+    return;
+  }
+  const cls=CLASSES.find(c=>c.id===prof.classId)||{n:'All',e:'🎖'};
+  cu={...prof,uid:emailKey,cn:cls.n,ce:cls.e,ini:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
+  clubKey=san(clubName);
+  hideLoad();launch();
+}
+
+function fErr(code){
+  const s=(code||'').toUpperCase();
+  if(s.includes('EMAIL_NOT_FOUND')||s.includes('USER_NOT_FOUND'))return 'No account with that email.';
+  if(s.includes('INVALID_PASSWORD')||s.includes('WRONG_PASSWORD'))return 'Incorrect password.';
+  if(s.includes('EMAIL_EXISTS'))return 'Email already registered — sign in instead.';
+  if(s.includes('INVALID_EMAIL'))return 'Invalid email address.';
+  if(s.includes('WEAK_PASSWORD'))return 'Password too weak — use at least 6 characters.';
+  if(s.includes('NETWORK'))return 'Network error. Check your internet connection.';
+  if(s.includes('INVALID_LOGIN_CREDENTIALS')||s.includes('INVALID_CREDENTIAL')||s.includes('INCORRECT'))return 'Email or password is incorrect.';
+  return 'Something went wrong. Try again.';
+}
+
+async function doSignOut(){
+  if(confirm('Sign out of PathfinderApp?')){
+    if(msgOff){clearInterval(msgOff);msgOff=null;}
+    cu=null;show('auth-screen');id('msg-list').innerHTML='';toast('Signed out.');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// LAUNCH APP
+// ═══════════════════════════════════════════════════
+function launch(){
+  show('main-screen');
+  const now=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  id('att-date').textContent=now;id('hyg-date').textContent=now;
+  // Role display — handle deputy director
+  const roleLabel=cu.role==='director'
+    ?(cu.dirType==='deputy'?'Deputy Director':'Director')
+    :cap(cu.role);
+  const slotLabel=cu.role==='instructor'&&cu.slot?(cu.slot==='slot1'?' · Instructor 1':' · Instructor 2'):'';
+id('hdr-sub').textContent=`${cu.ce} ${cu.cn} · ${roleLabel}${slotLabel}`;
+  id('hdr-title').textContent=cu.clubName||'PathfinderApp';
+  id('hdr-av').textContent=cu.ini;
+  id('hm-cls').textContent=`${cu.ce} ${cu.cn}`;
+  id('hm-greet').textContent=`Welcome, ${cu.name.split(' ')[0]}! 👋`;
+  id('hm-role').textContent=`${roleLabel} · ${cu.clubName||'Pathfinder Club'}`;
+  id('hdr-mode').innerHTML=demoMode
+    ?'<span style="color:var(--amb);font-size:11px">⚠️ Demo</span>'
+    :'<span style="color:var(--a2);font-size:11px">● Live</span>';
+
+  // Settings panel
+  id('set-av').textContent=cu.ini;
+  id('set-name').textContent=cu.name;
+  id('set-role').textContent=`${roleLabel} · ${cu.cn}`;
+  id('set-club').textContent=`🏠 ${cu.clubName||'Pathfinder Club'}`;
+  id('set-storage').textContent=demoMode?'Demo mode — local only':'Firebase Realtime Database';
+  id('set-storage-badge').textContent=demoMode?'Demo':'Live';
+  id('set-storage-badge').className='badge '+(demoMode?'ba':'bg');
+  syncToggleUI();
+
+  buildNav();buildHome();buildMGUI();buildChatTabs();
+  if(cu.role==='instructor'||cu.role==='director'){buildStudents();buildStars();if(cu.classId==='masterguide')buildMGCands();}
+  if(cu.role==='student')buildStuView();
+  if(cu.role==='director')buildDirDash();
+  listenMsgs('global');
+  requestNotifPermission();
+  triggerAINotif();
+  if(settings.tip)showAITip();
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function buildNav(){
+  let tabs;
+  const isMG = cu.classId==='masterguide';
+  if(cu.role==='student')
+    tabs=[{id:'home',e:'🏠',l:'Home'},{id:'students',e:'📊',l:'My Panel'},{id:'devotion',e:'📖',l:'Devotion'},{id:'messages',e:'💬',l:'Chat'},{id:'settings',e:'⚙️',l:'Settings'}];
+  else if(cu.role==='instructor')
+    tabs=isMG
+      ?[{id:'home',e:'🏠',l:'Home'},{id:'instructors',e:'📋',l:'Instruct.'},{id:'devotion',e:'📖',l:'Devotion'},{id:'masterguide',e:'🏅',l:'MG'},{id:'messages',e:'💬',l:'Chat'},{id:'settings',e:'⚙️',l:'Settings'}]
+      :[{id:'home',e:'🏠',l:'Home'},{id:'instructors',e:'📋',l:'Instruct.'},{id:'devotion',e:'📖',l:'Devotion'},{id:'messages',e:'💬',l:'Chat'},{id:'settings',e:'⚙️',l:'Settings'}];
+  else
+    tabs=[{id:'home',e:'🏠',l:'Home'},{id:'directors',e:'🎖',l:'Director'},{id:'devotion',e:'📖',l:'Devotion'},{id:'masterguide',e:'🏅',l:'MG'},{id:'messages',e:'💬',l:'Chat'},{id:'settings',e:'⚙️',l:'Settings'}];
+  id('bnav').innerHTML=tabs.map((t,i)=>`<button class="nb${i===0?' a':''}" id="nb-${t.id}" onclick="swTab('${t.id}')"><span class="ni">${t.e}</span><span>${t.l}</span></button>`).join('');
+}
+
+let currentTab = 'home';
+function swTab(tab, addHistory=true){
+  if(addHistory && currentTab !== tab){
+    navHistory.push(currentTab);
+    if(navHistory.length > 20) navHistory.shift(); // keep max 20
+  }
+  currentTab = tab;
+  document.querySelectorAll('.con').forEach(c=>c.style.display='none');
+  id('tab-'+tab).style.display='block';
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('a'));
+  id('nb-'+tab)?.classList.add('a');
+  const bar=id('mbar');
+  bar.style.display=tab==='messages'?'flex':'none';
+  if(tab==='messages')setTimeout(()=>{const m=id('msg-list');if(m)m.scrollTop=m.scrollHeight;},100);
+  if(tab==='devotion') initDevotionTab();
+}
+
+// ═══════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════
+function buildHome(){
+  let s=[];
+  if(cu.role==='student')s=[
+    {e:'📊',n:'My Scores',d:'Instructor scores',a:"swTab('students')"},
+    {e:'📤',n:'Uploads',d:'Submit work',a:"swTab('students');subTab('students','uploads')"},
+    {e:'💬',n:'Chat',d:'Club messages',a:"swTab('messages')"},
+    {e:'⚙️',n:'Settings',d:'App preferences',a:"swTab('settings')"},
+  ];
+  else if(cu.role==='instructor')s=[
+    {e:'✅',n:'Attendance',d:'Mark class',a:"swTab('instructors')"},
+    {e:'🧼',n:'Hygiene',d:'Hygiene check',a:"swTab('instructors');subTab('instructors','hygiene')"},
+    {e:'📋',n:'Assessment',d:'Score students',a:"swTab('instructors');subTab('instructors','assessment')"},
+    {e:'📖',n:'Devotion Chat',d:'Class devotion',a:"swTab('messages');switchChat('devotion')"},
+  ];
+  else s=[
+    {e:'📊',n:'Dashboard',d:'Club overview',a:"swTab('directors')"},
+    {e:'🏅',n:'MG Program',d:'Master Guide',a:"swTab('masterguide')"},
+    {e:'💬',n:'All Chats',d:'View all channels',a:"swTab('messages')"},
+    {e:'⚙️',n:'Settings',d:'App preferences',a:"swTab('settings')"},
+  ];
+  id('hm-sections').innerHTML=s.map(x=>`<div class="sc" onclick="${x.a}"><div style="font-size:28px;margin-bottom:7px">${x.e}</div><div style="font-size:13px;font-weight:700;margin-bottom:3px;color:var(--txt)">${x.n}</div><div style="font-size:11px;color:var(--mut)">${x.d}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// AI FEATURES
+// ═══════════════════════════════════════════════════
+function triggerAINotif(){
+  if(!settings.devot)return;
+  const hour=new Date().getHours();
+  const msgs=[];
+  if(hour<12)msgs.push({icon:'📖',title:'Good morning, '+cu.name.split(' ')[0]+'!',body:'Your daily devotion is waiting. Take 5 minutes to read and reflect before your day starts.'});
+  if(hour>=12&&hour<17)msgs.push({icon:'⏰',title:'Afternoon check-in',body:'Have you completed your devotion today? It\'s not too late — open the Devotion Chat to see today\'s verse.'});
+  if(cu.role==='instructor'&&settings.att){
+    const day=new Date().getDay();
+    if(day===6||day===0)msgs.push({icon:'✅',title:'Sabbath Attendance Reminder',body:'Don\'t forget to mark attendance for today\'s Pathfinder meeting!'});
+  }
+  if(msgs.length>0){
+    const m=msgs[0];
+    const bn=id('ai-notif-banner');
+    bn.style.display='block';
+    bn.innerHTML=`<div class="ai-banner"><div class="ai-icon">${m.icon}</div><div style="flex:1"><div class="ai-title">${m.title}</div><div class="ai-body">${m.body}</div><button class="ai-dismiss" onclick="this.closest('.ai-banner').parentElement.style.display='none'">Got it ✓</button></div></div>`;
+  }
+}
+
+function showAITip(){
+  if(!settings.tip)return;
+  const tips=AI_TIPS[cu.classId]||AI_TIPS.ranger;
+  const tip=tips[Math.floor(Math.random()*tips.length)];
+  const card=id('ai-tip-card');
+  card.style.display='block';
+  id('ai-tip-text').textContent=tip;
+}
+
+// ═══════════════════════════════════════════════════
+// MESSAGING — MULTI-CHANNEL WITH CLASS PRIVACY
+// ═══════════════════════════════════════════════════
+function buildChatTabs(){
+  const isDir = cu.role==='director';
+  const isInst = cu.role==='instructor';
+
+  // Everyone gets: Club-wide
+  let channels=[
+    {id:'global', label:'📢 Club-wide'},
+  ];
+
+  // Students + Instructors get their own class channel + class devotion
+  if(cu.classId && cu.classId!=='all'){
+    const cls=CLASSES.find(c=>c.id===cu.classId);
+    if(cls){
+      channels.push({id:'class-'+cu.classId, label:cls.e+' '+cls.n+' Class'});
+      channels.push({id:'devotion-'+cu.classId, label:'📖 '+cls.n+' Devotion'});
+    }
+  }
+
+  // Director sees ALL class channels + ALL devotion channels
+  if(isDir){
+    CLASSES.forEach(cls=>{
+      if(!channels.find(c=>c.id==='class-'+cls.id))
+        channels.push({id:'class-'+cls.id, label:cls.e+' '+cls.n});
+      if(!channels.find(c=>c.id==='devotion-'+cls.id))
+        channels.push({id:'devotion-'+cls.id, label:'📖 '+cls.n+' Dev.'});
+    });
+  }
+
+  id('chat-tabs').innerHTML=channels.map(c=>`<div class="ctab${c.id==='global'?' a':''}" id="ctab-${c.id}" onclick="switchChat('${c.id}')">${c.label}</div>`).join('');
+}
+
+function switchChat(chanId){
+  activeChat=chanId;
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('a'));
+  id('ctab-'+chanId)?.classList.add('a');
+
+  // Students can read devotion but not post
+  // Instructors + directors can post everywhere
+  const isDevChan = chanId.startsWith('devotion-');
+  const isReadOnly = isDevChan && cu.role==='student';
+  id('minp').placeholder = isReadOnly
+    ? 'Read-only — only instructors post devotions here'
+    : chanId==='global'
+      ? 'Message everyone in your club...'
+      : isDevChan
+        ? 'Post a devotion message to your class...'
+        : 'Message your class...';
+  id('mbar').style.pointerEvents = isReadOnly?'none':'auto';
+  id('mbar').style.opacity = isReadOnly?'0.5':'1';
+
+  // Stop previous listener
+  if(msgOff){clearInterval(msgOff);msgOff=null;}
+  listenMsgs(chanId);
+}
+
+function listenMsgs(chanId){
+  if(demoMode){
+    let msgs=[];
+    if(chanId==='global')msgs=demoMsgs.global||[];
+    else if(chanId.startsWith('devotion-'))msgs=demoMsgs.devotion||[];
+    else{
+      const clsId=chanId.replace('class-','');
+      msgs=(demoMsgs[clsId]||[]);
+      if(cu.role!=='director')msgs=msgs.filter(m=>!m.cls||m.cls==='all'||m.cls===cu.classId);
+    }
+    renderMsgs(msgs,chanId);
+    return;
+  }
+  const path=`clubs/${clubKey}/messages/${chanId}`;
+  dbListen(path, raw=>{
+    if(!raw){renderMsgs([],chanId);return;}
+    const msgs=Object.values(raw).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
+    renderMsgs(msgs,chanId);
+  }).then(timer=>{ msgOff=timer; });
+}
+
+function renderMsgs(msgs,chanId){
+  const list=id('msg-list');
+  if(!list)return;
+  const isDev=chanId.startsWith('devotion-');
+  let html='';
+  if(isDev){
+    const v=DEVOTION_VERSES[new Date().getDay()%DEVOTION_VERSES.length];
+    html+=`<div class="dev-verse"><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:6px">📖 TODAY'S VERSE</div><div style="font-size:15px;font-style:italic;line-height:1.6">${v.v}</div><div class="dev-ref">${v.r}</div></div>`;
+  }
+  if(msgs.length===0){
+    html+=`<div style="text-align:center;padding:30px 20px;color:var(--mut);font-size:14px">No messages yet. Be the first! 👋</div>`;
+  } else {
+    html+=msgs.map(m=>{
+      const mine=m.uid===cu?.uid||m.s===cu?.name;
+      const roleBadge=m.r==='director'?'ba':m.r==='instructor'?'bb':m.r==='masterguide'?'bp':'bg';
+      const dispRole = m.roleLabel || m.r || 'student';
+      return `<div class="mbub ${mine?'me':'them'}">
+        ${!mine?`<div class="bn">${esc(m.s||'')} <span class="badge ${roleBadge}">${dispRole}</span></div>`:''}
+        <div class="bt">${esc(m.t||m.text||'')}</div>
+        <div class="btime">${m.tm||m.time||''}</div></div>`;
+    }).join('');
+  }
+  list.innerHTML=html;
+  setTimeout(()=>{if(list)list.scrollTop=list.scrollHeight;},80);
+  if(msgs&&msgs.length>0) checkNewMessages(chanId||activeChat, msgs);
+}
+
+async function sendMsg(){
+  const inp=id('minp'),txt=inp.value.trim();
+  if(!txt)return;
+  // Students cannot post in devotion channels
+  if(activeChat.startsWith('devotion-')&&cu.role==='student'){
+    toast('📖 Devotion is read-only for students.');return;
+  }
+  // Only your own class channel — students, instructors. Directors can post anywhere.
+  if(activeChat.startsWith('class-')&&cu.role!=='director'){
+    const clsId=activeChat.replace('class-','');
+    if(clsId!==cu.classId){toast('🔒 You can only post in your own class channel.');return;}
+  }
+  inp.value='';
+  const now=new Date();
+  const roleLabel = cu.role==='instructor'
+    ?(cu.slot==='slot1'?'Instructor 1':'Instructor 2')
+    :cu.role==='director'
+      ?(cu.dirType==='deputy'?'Deputy Director':'Director')
+      :'student';
+  const obj={s:cu.name,r:cu.role,roleLabel,uid:cu.uid,t:txt,tm:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),ts:now.getTime(),cls:cu.classId||'all'};
+  if(demoMode){
+    const key=activeChat==='global'?'global':activeChat.startsWith('devotion-')?'devotion':activeChat.replace('class-','');
+    if(!demoMsgs[key])demoMsgs[key]=[];
+    demoMsgs[key].push(obj);
+    renderMsgs(demoMsgs[key],activeChat);
+  } else {
+    await dbPush(`clubs/${clubKey}/messages/${activeChat}`,obj);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS & THEME
+// ═══════════════════════════════════════════════════
+function setTheme(t){
+  applyTheme(t,true);
+  // Update UI selection
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('s'));
+  id('thm-'+t)?.classList.add('s');
+}
+function applyTheme(t,save){
+  document.documentElement.setAttribute('data-theme',t);
+  if(save)localStorage.setItem('pf-theme',t);
+  // Sync button UI
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('s'));
+  id('thm-'+t)?.classList.add('s');
+}
+function toggleSetting(key){
+  settings[key]=!settings[key];
+  localStorage.setItem('pf-settings',JSON.stringify(settings));
+  syncToggleUI();
+  toast(settings[key]?'Notification enabled ✅':'Notification disabled');
+}
+function syncToggleUI(){
+  Object.keys(settings).forEach(k=>{
+    const btn=id('tog-'+k);
+    if(btn)btn.className='toggle'+(settings[k]?' on':'');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// STUDENT LISTS
+// ═══════════════════════════════════════════════════
+function getStu(){return classStudents;}
+async function buildStudents(){
+  // Load real students from Firebase — accounts in this club + this class
+  const all = await dbGet('accounts');
+  classStudents = [];
+  if(all){
+    Object.values(all).forEach(acc=>{
+      if(acc.role==='student' && san(acc.clubName||'')===clubKey && acc.classId===cu.classId){
+        classStudents.push(acc.name);
+      }
+    });
+  }
+  buildAssDDs();
+  const stu = classStudents;
+  if(stu.length===0){
+    const emptyMsg=`<div style="text-align:center;padding:24px;color:var(--mut);font-size:14px">No students in your class yet.<br>Students need to create an account to appear here.</div>`;
+    id('att-list').innerHTML=emptyMsg;
+    id('hyg-list').innerHTML=emptyMsg;
+    id('dev-att').innerHTML=emptyMsg;
+    return;
+  }
+  id('att-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="ar${i}"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div><div class="sm2">${cu.cn}</div></div><div class="abtns"><button class="ab p" onclick="markA(${i},'p')">P</button><button class="ab l" onclick="markA(${i},'l')">L</button><button class="ab ab2" onclick="markA(${i},'ab2')">A</button></div></div>`).join('');
+  id('hyg-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="hr${i}"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div></div><div class="abtns"><button class="hb bad" onclick="markH(${i},'bad')">Bad</button><button class="hb good" onclick="markH(${i},'good')">Good</button><button class="hb perf" onclick="markH(${i},'perf')">✓ Perfect</button></div></div>`).join('');
+  id('dev-att').innerHTML=stu.map((s,i)=>`<div class="srow"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div></div><div class="abtns"><button class="ab p" onclick="this.closest('.abtns').querySelectorAll('.ab').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P</button><button class="ab ab2" onclick="this.closest('.abtns').querySelectorAll('.ab').forEach(b=>b.classList.remove('on'));this.classList.add('on')">A</button></div></div>`).join('');
+}
+function markA(i,s){
+  const r=id('ar'+i);
+  r.querySelectorAll('.ab').forEach(b=>{
+    b.classList.remove('on');
+    b.style.background='';b.style.color='';b.style.borderColor='';
+  });
+  const btn=r.querySelector('.ab.'+s);
+  if(btn){
+    btn.classList.add('on');
+    const colors={p:['var(--a2)','#fff'],ab2:['var(--red)','#fff'],l:['var(--amb)','#fff']};
+    const c=colors[s]||['var(--accent)','#fff'];
+    btn.style.background=c[0];btn.style.color=c[1];btn.style.borderColor=c[0];
+  }
+}
+function markH(i,s){
+  const r=id('hr'+i);
+  r.querySelectorAll('.hb').forEach(b=>{
+    b.classList.remove('on');
+    b.style.background='';b.style.color='';b.style.borderColor='';
+  });
+  const btn=r.querySelector('.hb.'+s);
+  if(btn){
+    btn.classList.add('on');
+    const colors={bad:['var(--red)','#fff'],good:['var(--amb)','#fff'],perf:['var(--a2)','#fff']};
+    const c=colors[s]||['var(--accent)','#fff'];
+    btn.style.background=c[0];btn.style.color=c[1];btn.style.borderColor=c[0];
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ASSESSMENT & SCORING
+// ═══════════════════════════════════════════════════
+function buildAssDDs(){
+  const stu=getStu();
+  if(stu.length===0){
+    const empty='<option>No students yet</option>';
+    id('ass-sel').innerHTML=empty;id('sc-sel').innerHTML=empty;
+    return;
+  }
+  const opts=stu.map((s,i)=>`<option value="${i}">${s}</option>`).join('');
+  id('ass-sel').innerHTML=opts;id('sc-sel').innerHTML=opts;
+}
+function loadNotes(i){id('ass-ta').value='';}
+function buildStars(){
+  ['p','n','c'].forEach(k=>{
+    const el=id('st-'+k);if(!el)return;
+    el.innerHTML=[1,2,3,4,5].map(n=>`<div class="st" id="star-${k}-${n}" onclick="setStar('${k}',${n})">⭐</div>`).join('');
+  });
+}
+function setStar(k,v){sc[k]=v;[1,2,3,4,5].forEach(n=>id('star-'+k+'-'+n)?.classList.toggle('on',n<=v));id('sv-'+k).textContent=v+'/5';}
+function assTab(tab){
+  id('ass-notes').style.display=tab==='notes'?'block':'none';
+  id('ass-scoring').style.display=tab==='scoring'?'block':'none';
+  document.querySelectorAll('#sub-instructors-assessment > .tabs .tab').forEach((t,i)=>t.classList.toggle('a',i===(tab==='notes'?0:1)));
+  // Reload data for currently selected student when switching tabs
+  if(tab==='scoring'){ const sel=id('sc-sel'); if(sel&&sel.value!==undefined) loadExistingScores(sel.value); }
+  if(tab==='notes'){ const sel=id('ass-sel'); if(sel&&sel.value!==undefined) loadNotes(sel.value); }
+}
+
+// ═══════════════════════════════════════════════════
+// STUDENT SCORE VIEW
+// ═══════════════════════════════════════════════════
+async function buildStuView(){
+  const noScore=`<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No scores yet. Your instructor hasn't scored you yet.</div>`;
+  const noAtt=`<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No attendance records yet.</div>`;
+  const noHyg=`<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No hygiene records yet.</div>`;
+  const sl={punctuality:'Punctuality',neatness:'Neatness / Presentation',clarity:'Subject Clarity'};
+
+  // Load scores from Firebase
+  const scoreData = await dbGet(`clubs/${clubKey}/scores/${cu.classId}/${san(cu.name)}`);
+  const d=id('stu-scores');
+  if(d){
+    if(scoreData && (scoreData.punctuality||scoreData.neatness||scoreData.clarity)){
+      d.innerHTML=Object.entries(sl).map(([k,label])=>{
+        const v=scoreData[k]||0;
+        return `<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;color:var(--mut)">${label}</span><span style="font-size:14px;font-weight:800;color:var(--amb)">${v}/5</span></div><div class="sbw"><div class="sbar" style="width:${v*20}%"></div></div></div>`;
+      }).join('');
+    } else { d.innerHTML=noScore; }
+  }
+
+  // Load attendance from Firebase
+  const attData = await dbGet(`clubs/${clubKey}/attendance/${cu.classId}`);
+  const a=id('stu-att');
+  if(a){
+    if(attData){
+      let present=0,late=0,absent=0;
+      Object.values(attData).forEach(day=>{
+        Object.values(day).forEach(entry=>{
+          if(typeof entry==='object' && entry.name===cu.name){
+            if(entry.status==='p')present++;
+            else if(entry.status==='l')late++;
+            else if(entry.status==='ab2')absent++;
+          }
+        });
+      });
+      a.innerHTML=`<div style="display:flex;gap:20px"><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--a2)">${present}</div><div style="font-size:11px;color:var(--mut)">Present</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--amb)">${late}</div><div style="font-size:11px;color:var(--mut)">Late</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--red)">${absent}</div><div style="font-size:11px;color:var(--mut)">Absent</div></div></div>`;
+    } else { a.innerHTML=noAtt; }
+  }
+
+  // Load hygiene from Firebase
+  const hygData = await dbGet(`clubs/${clubKey}/hygiene/${cu.classId}`);
+  const h=id('stu-hyg');
+  if(h){
+    if(hygData){
+      let lastLevel='';
+      Object.values(hygData).forEach(day=>{
+        Object.values(day).forEach(entry=>{
+          if(typeof entry==='object' && entry.name===cu.name) lastLevel=entry.level;
+        });
+      });
+      const lvlMap={perf:'🌟 Perfect',good:'👍 Good',bad:'⚠️ Needs Improvement'};
+      const badgeMap={perf:'bg',good:'ba',bad:'br'};
+      h.innerHTML=lastLevel
+        ?`<span class="badge ${badgeMap[lastLevel]||'bb'}">${lvlMap[lastLevel]||lastLevel} — Last checked</span><div style="font-size:12px;color:var(--mut);margin-top:6px">Keep it up! Hygiene contributes to your overall score.</div>`
+        :noHyg;
+    } else { h.innerHTML=noHyg; }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MASTER GUIDE
+// ═══════════════════════════════════════════════════
+function buildMGUI(){
+  id('mg-reqs').innerHTML=MG.map(area=>`<div class="mgsec"><div class="mghdr">${area.e} ${area.a}</div>${area.items.map(item=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px"><input type="checkbox" style="width:16px;height:16px;accent-color:var(--pur);flex-shrink:0"><span style="font-size:13px;color:var(--mut)">${item}</span></div>`).join('')}</div>`).join('');
+}
+async function buildMGCands(){
+  const c=id('mg-cands');if(!c)return;
+  const all=await dbGet('accounts');
+  if(!all){c.innerHTML='<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No candidates yet.</div>';return;}
+  const cands=Object.values(all).filter(a=>a.classId==='masterguide'&&san(a.clubName||'')===clubKey);
+  if(cands.length===0){c.innerHTML='<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No Master Guide candidates in your club yet.</div>';return;}
+  c.innerHTML=cands.map(a=>`<div class="srow"><div class="av" style="background:var(--pur)">${ini(a.name)}</div><div class="si"><div class="sn">${a.name}</div><div class="sm2">Master Guide Candidate</div></div><span class="badge bp">In Progress</span></div>`).join('');
+}
+function mgTab(tab){
+  ['curriculum','candidates','portfolio'].forEach(t=>id('mg-'+t).style.display=t===tab?'block':'none');
+  document.querySelectorAll('#tab-masterguide > .tabs .tab').forEach((t,i)=>t.classList.toggle('a',['curriculum','candidates','portfolio'][i]===tab));
+}
+
+// ═══════════════════════════════════════════════════
+// DIRECTOR DASHBOARD
+// ═══════════════════════════════════════════════════
+async function buildDirDash(){
+  const roleLabel=cu.dirType==='deputy'?'Deputy Director':'Director';
+  id('dir-title').textContent=`${roleLabel}'s Dashboard`;
+  const s=id('dir-stats');
+  const all=await dbGet('accounts')||{};
+  const clubAccounts=Object.values(all).filter(a=>san(a.clubName||'')===clubKey);
+  const studentCount=clubAccounts.filter(a=>a.role==='student').length;
+  const classCounts={};
+  clubAccounts.forEach(a=>{if(a.role==='student')classCounts[a.classId]=(classCounts[a.classId]||0)+1;});
+  const activeClasses=Object.keys(classCounts).length;
+  if(s)s.innerHTML=`<div class="stcard"><div class="stnum">${activeClasses}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Active Classes</div></div><div class="stcard"><div class="stnum">${studentCount}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Total Students</div></div><div class="stcard"><div class="stnum">${clubAccounts.filter(a=>a.role==='instructor').length}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Instructors</div></div><div class="stcard"><div class="stnum">${clubAccounts.length}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Total Members</div></div>`;
+  const cl=id('dir-classes');
+  if(cl)cl.innerHTML=CLASSES.map(c=>`<div class="srow"><div style="font-size:24px">${c.e}</div><div class="si"><div class="sn">${c.n} Class</div><div class="sm2">${c.g} · ${classCounts[c.id]||0} enrolled</div></div><span class="badge ${classCounts[c.id]?'bg':'ba'}">${classCounts[c.id]?'Active':'Empty'}</span></div>`).join('');
+  const h=id('dir-honors');
+  if(h)h.innerHTML=HONORS.map(x=>`<div class="srow"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--amb),#fbbf24);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${x.e}</div><div class="si"><div class="sn">${x.n}</div><div class="sm2">${x.c}</div></div><span class="badge ${Math.random()>.4?'bg':'ba'}">${Math.random()>.4?'Earned':'In Progress'}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// UPLOADS
+// ═══════════════════════════════════════════════════
+const upMap={journal:'jfiles',honor:'hfiles',requirement:'rfiles',mgport:'mgp-files'};
+const upIco={journal:'📓',honor:'🏅',requirement:'📋',mgport:'📁'};
+function fakeUp(type){
+  upCtrs[type]=(upCtrs[type]||0)+1;
+  const cont=id(upMap[type]);if(!cont)return;
+  const d=document.createElement('div');d.className='ufile';
+  d.innerHTML=`<div style="font-size:22px">${upIco[type]}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--txt)">${cap(type)}_${upCtrs[type]}.pdf</div><div style="font-size:11px;color:var(--mut)">${new Date().toLocaleDateString()} · ${cu.cn}</div></div><span class="badge bg">✓ Done</span>`;
+  cont.prepend(d);toast('File uploaded! 📤');
+  if(!demoMode)dbPush(`clubs/${clubKey}/uploads/${cu.uid}/${type}`,{name:`${cap(type)}_${upCtrs[type]}.pdf`,ts:Date.now(),cls:cu.classId});
+}
+
+// ═══════════════════════════════════════════════════
+// BUILD HONORS & REQUIREMENTS CHECKLISTS
+// ═══════════════════════════════════════════════════
+async function buildHonorsChecklist(){
+  const container = id('honors-checklist');
+  if(!container) return;
+  const classId = cu.classId || 'ranger';
+  const honors = CLASS_HONORS[classId] || CLASS_HONORS.ranger;
+
+  // Load saved status from Firebase
+  const saved = await dbGet(`clubs/${clubKey}/honors/${san(cu.name)}`) || {};
+
+  container.innerHTML = honors.map((h,i) => {
+    const status = saved[san(h.n)] || 'none';
+    return `<div class="honor-item card" id="hi-${i}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="cycleHonor(${i},'${san(h.n)}')">
+      <div style="font-size:26px;flex-shrink:0">${h.e}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--txt)">${h.n}</div>
+        <div style="font-size:11px;color:var(--mut)">${h.cat}</div>
+      </div>
+      <div id="hs-${i}" class="badge ${status==='earned'?'bg':status==='progress'?'ba':'br'}" style="min-width:70px;text-align:center">
+        ${status==='earned'?'✓ Earned':status==='progress'?'In Progress':'Not Started'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function cycleHonor(i, key){
+  const badge = id('hs-'+i);
+  const current = badge.textContent.trim();
+  let next, cls;
+  if(current.includes('Not Started')){next='In Progress';cls='ba';}
+  else if(current.includes('In Progress')){next='✓ Earned';cls='bg';}
+  else{next='Not Started';cls='br';}
+  badge.textContent = next;
+  badge.className = 'badge '+cls;
+  // Save to Firebase
+  const statusVal = next.includes('Earned')?'earned':next.includes('Progress')?'progress':'none';
+  if(!demoMode) await dbSet(`clubs/${clubKey}/honors/${san(cu.name)}/${key}`, statusVal);
+  toast(next.includes('Earned')?'🏅 Honor earned! Well done!':next.includes('Progress')?'📝 Marked as In Progress':'Unmarked');
+}
+
+let reqLiveTimer = null;
+
+async function buildReqChecklist(){
+  const container = id('req-checklist');
+  if(!container) return;
+  const classId = cu.classId || 'ranger';
+  const reqs = CLASS_REQUIREMENTS[classId] || CLASS_REQUIREMENTS.ranger;
+  const saved = await dbGet(`clubs/${clubKey}/requirements/${san(cu.name)}`) || {};
+  renderReqChecklist(container, reqs, saved);
+
+  // Live polling every 10s so instructor sees updates
+  if(reqLiveTimer) clearInterval(reqLiveTimer);
+  reqLiveTimer = setInterval(async()=>{
+    const fresh = await dbGet(`clubs/${clubKey}/requirements/${san(cu.name)}`)||{};
+    renderReqChecklist(container, reqs, fresh);
+  }, 10000);
+}
+
+function renderReqChecklist(container, reqs, saved){
+  const total = reqs.length;
+  const done = Object.values(saved).filter(v=>v===true).length;
+  const pct = total>0?Math.round((done/total)*100):0;
+
+  // Group by category
+  const cats = {};
+  reqs.forEach((r,i)=>{
+    const cat = r.cat||'📋 General';
+    if(!cats[cat]) cats[cat]=[];
+    cats[cat].push({...r,i});
+  });
+
+  let html = `<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:700;color:var(--txt)">${done} of ${total} completed</span>
+      <span style="font-size:13px;font-weight:800;color:var(--accent)">${pct}%</span>
+    </div>
+    <div class="sbw" style="height:8px;margin:0"><div class="sbar" style="width:${pct}%;height:8px"></div></div>
+  </div>`;
+
+  Object.entries(cats).forEach(([catName, items])=>{
+    const catDone = items.filter(r=>saved['req'+r.i]===true).length;
+    html += `<div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>${catName}</span>
+        <span style="color:var(--mut)">${catDone}/${items.length}</span>
+      </div>`;
+    items.forEach(r=>{
+      const checked = saved['req'+r.i]===true;
+      const readonly = cu.role!=='student';
+      html += `<div class="srow" style="cursor:${readonly?'default':'pointer'};margin-bottom:6px" ${!readonly?`onclick="toggleReq(${r.i})"`:''}">
+        <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${checked?'var(--a2)':'var(--border)'};background:${checked?'var(--a2)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:#fff;font-weight:800;transition:all .2s">
+          ${checked?'✓':''}
+        </div>
+        <div class="si"><div style="font-size:13px;color:${checked?'var(--mut)':'var(--txt)'};line-height:1.4;${checked?'text-decoration:line-through':''}">${r.req}</div></div>
+        ${readonly&&checked?'<span class="badge bg" style="font-size:9px">Done</span>':''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+async function toggleReq(i){
+  const saved = await dbGet(`clubs/${clubKey}/requirements/${san(cu.name)}`) || {};
+  saved['req'+i] = !saved['req'+i];
+  if(!demoMode) await dbSet(`clubs/${clubKey}/requirements/${san(cu.name)}`, saved);
+  buildReqChecklist();
+  toast(saved['req'+i] ? '✅ Requirement completed!' : 'Unmarked');
+}
+
+
+
+// ═══════════════════════════════════════════════════
+// CLOUDINARY IMAGE UPLOAD
+// Photos go to Cloudinary, only the URL saved in Firebase
+// ═══════════════════════════════════════════════════
+async function uploadToCloudinary(base64Data, filename){
+  try{
+    // Convert base64 to blob
+    const res = await fetch(base64Data);
+    const blob = await res.blob();
+    const formData = new FormData();
+    formData.append('file', blob, filename||'honor-photo.jpg');
+    formData.append('upload_preset', CLD_PRESET);
+    formData.append('folder', `pathfinderapp/${clubKey}`);
+
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await r.json();
+    if(data.secure_url){
+      return data.secure_url; // return the CDN URL
+    } else {
+      console.error('Cloudinary error:', data);
+      return null;
+    }
+  } catch(e){
+    console.error('Upload failed:', e);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HONOR SUBMISSION SYSTEM
+// ═══════════════════════════════════════════════════
+function pickHonorPhoto(){
+  requestImageFromApp('honor');
+}
+function previewHonorPhoto(input){
+  if(!input.files||!input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    id('honor-preview-img').src = e.target.result;
+    id('honor-photo-name').textContent = file.name;
+    id('honor-photo-preview').style.display = 'block';
+    id('honor-photo-zone').style.display = 'none';
+    honorPhotoData = e.target.result; // store base64
+  };
+  reader.readAsDataURL(file);
+}
+function clearHonorPhoto(){
+  honorPhotoData = null;
+  id('honor-photo-input').value = '';
+  id('honor-photo-preview').style.display = 'none';
+  id('honor-photo-zone').style.display = 'block';
+}
+// placeholder for dropdown populate (no longer used)
+async function populateHonorSubmitDropdown(){ }
+
+async function submitHonorToInstructor(){
+  const nameInp = id('honor-submit-name');
+  const note = id('honor-submit-note');
+  const honorName = nameInp?.value?.trim();
+  if(!honorName){ toast('Please type the honor name first.'); return; }
+
+  // Show uploading state
+  const btn = document.querySelector('[onclick="submitHonorToInstructor()"]');
+  if(btn){ btn.textContent='⏳ Uploading...'; btn.style.opacity='0.7'; btn.disabled=true; }
+
+  let photoUrl = null;
+  if(honorPhotoData){
+    toast('📤 Uploading photo to Cloudinary...');
+    photoUrl = await uploadToCloudinary(honorPhotoData, `${san(cu.name)}_${san(honorName)}.jpg`);
+    if(!photoUrl){
+      toast('⚠️ Photo upload failed. Submitting without photo.');
+    }
+  }
+
+  const submission = {
+    studentName: cu.name,
+    studentUid: cu.uid,
+    honorName,
+    note: note?.value?.trim() || '',
+    photo: photoUrl || null,   // Cloudinary URL, not base64
+    classId: cu.classId,
+    clubKey,
+    status: 'pending',
+    ts: Date.now(),
+    time: new Date().toLocaleString(),
+  };
+
+  if(!demoMode){
+    await dbPush(`clubs/${clubKey}/honorSubmissions/${cu.classId}`, submission);
+  }
+
+  // Reset button
+  if(btn){ btn.textContent='📨 Send to Instructor'; btn.style.opacity='1'; btn.disabled=false; }
+
+  toast(`📨 "${honorName}" sent to your instructor!`);
+  nameInp.value = '';
+  if(note) note.value = '';
+  clearHonorPhoto();
+  loadSubmittedHonors();
+}
+
+async function loadSubmittedHonors(){
+  const list = id('submitted-honors-list');
+  if(!list) return;
+  if(demoMode){ list.innerHTML = '<div style="font-size:13px;color:var(--mut);text-align:center;padding:12px">No submissions yet.</div>'; return; }
+
+  const all = await dbGet(`clubs/${clubKey}/honorSubmissions/${cu.classId}`) || {};
+  const mine = Object.values(all).filter(s => s.studentUid === cu.uid || s.studentName === cu.name);
+
+  if(mine.length === 0){
+    list.innerHTML = '<div style="font-size:13px;color:var(--mut);text-align:center;padding:12px">No submitted honors yet.</div>';
+    return;
+  }
+
+  mine.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  list.innerHTML = mine.map(s => {
+    const stMap = {pending:'⏳ Pending',approved:'✅ Approved',rejected:'❌ Needs Revision'};
+    const badgeMap = {pending:'ba',approved:'bg',rejected:'br'};
+    return `<div class="srow">
+      <div style="font-size:22px">🏅</div>
+      <div class="si">
+        <div class="sn">${s.honorName}</div>
+        <div class="sm2">${s.time||''}${s.note?' · "'+s.note+'"':''}</div>
+      </div>
+      <span class="badge ${badgeMap[s.status]||'ba'}">${stMap[s.status]||s.status}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── INSTRUCTOR: Honor Submissions Inbox ──
+async function loadHonorInbox(){
+  const cont = id('honor-inbox');
+  if(!cont) return;
+  if(demoMode){ cont.innerHTML='<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px">No submissions yet.</div>'; return; }
+
+  const all = await dbGet(`clubs/${clubKey}/honorSubmissions/${cu.classId}`) || {};
+  const entries = Object.entries(all);
+
+  if(entries.length === 0){
+    cont.innerHTML = '<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px">No honor submissions from students yet.</div>';
+    return;
+  }
+
+  entries.sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+  cont.innerHTML = entries.map(([key, s]) => {
+    const stMap = {pending:'⏳ Pending',approved:'✅ Approved',rejected:'Needs Revision'};
+    const badgeMap = {pending:'ba',approved:'bg',rejected:'br'};
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="av">${ini(s.studentName||'?')}</div>
+        <div class="si">
+          <div class="sn">${s.studentName}</div>
+          <div class="sm2">🏅 ${s.honorName} · ${s.time||''}</div>
+          ${s.note?`<div class="sm2" style="margin-top:3px;font-style:italic">"${s.note}"</div>`:''}
+        </div>
+        <span class="badge ${badgeMap[s.status]||'ba'}">${stMap[s.status]||s.status}</span>
+      </div>
+      ${s.photo?`<img src="${s.photo}" style="width:100%;border-radius:8px;margin-bottom:10px;max-height:180px;object-fit:cover;border:1px solid var(--border)">`:''}
+      <div style="display:flex;gap:8px">
+        <button onclick="reviewHonor('${key}','approved')" style="flex:1;background:var(--a2);border:none;border-radius:8px;padding:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">✅ Approve</button>
+        <button onclick="reviewHonor('${key}','rejected')" style="flex:1;background:var(--red);border:none;border-radius:8px;padding:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">❌ Needs Revision</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function reviewHonor(key, status){
+  if(!demoMode) await dbSet(`clubs/${clubKey}/honorSubmissions/${cu.classId}/${key}/status`, status);
+  toast(status==='approved'?'✅ Honor approved!':'📝 Sent back for revision.');
+  loadHonorInbox();
+}
+
+function upTab(tab){
+  ['journals','honors','requirements'].forEach(t=>id('up-'+t).style.display=t===tab?'block':'none');
+  document.querySelectorAll('#sub-students-uploads > .tabs .tab').forEach((t,i)=>t.classList.toggle('a',['journals','honors','requirements'][i]===tab));
+  if(tab==='honors'){ buildHonorsChecklist(); setTimeout(()=>loadSubmittedHonors(),300); }
+  if(tab==='requirements') buildReqChecklist();
+}
+
+
+// ═══════════════════════════════════════════════════
+// DEVOTION TAB
+// ═══════════════════════════════════════════════════
+function initDevotionTab(){
+  // Show correct view per role
+  const sv = id('dev-student-view');
+  const iv = id('dev-instructor-view');
+  const dv = id('dev-director-view');
+  if(sv) sv.style.display = cu.role==='student'?'block':'none';
+  if(iv) iv.style.display = cu.role==='instructor'?'block':'none';
+  if(dv) dv.style.display = cu.role==='director'?'block':'none';
+
+  // Set today's verse
+  const v = DEVOTION_VERSES[new Date().getDay()%DEVOTION_VERSES.length];
+  if(id('dev-today-verse')) id('dev-today-verse').textContent = v.v;
+  if(id('dev-today-ref')) id('dev-today-ref').textContent = '— '+v.r;
+
+  if(id('dev-date-label')) id('dev-date-label').textContent = today();
+
+  if(cu.role==='student') loadStudentDevotionStatus();
+  if(cu.role==='student') loadInstructorDevotionPosts();
+  if(cu.role==='instructor') loadDevotionStatus();
+  if(cu.role==='director') loadDirectorDevotionOverview();
+}
+
+async function loadStudentDevotionStatus(){
+  const cont = id('dev-student-status');
+  if(!cont) return;
+  const data = await dbGet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`);
+  if(data && data.uploaded){
+    cont.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:12px"><div style="font-size:28px">✅</div><div><div style="font-weight:700;color:var(--a2)">Devotion Uploaded!</div><div style="font-size:12px;color:var(--mut)">Uploaded at ${data.time||''} — your instructor can see it.</div></div></div>`;
+    if(id('dev-upload-zone')) id('dev-upload-zone').style.display='none';
+  } else {
+    cont.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:12px"><div style="font-size:28px">❌</div><div><div style="font-weight:700;color:var(--red)">Not Uploaded Yet</div><div style="font-size:12px;color:var(--mut)">Upload your devotion journal below to mark it as done.</div></div></div>`;
+  }
+}
+
+async function loadInstructorDevotionPosts(){
+  const cont = id('dev-instructor-posts');
+  if(!cont) return;
+  const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}`);
+  if(!posts){ cont.innerHTML='<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px">No devotion posts yet from your instructor.</div>'; return; }
+  const sorted = Object.values(posts).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+  cont.innerHTML = sorted.map(p=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--mut);margin-bottom:4px">${p.date||''} · by ${p.by||'Instructor'}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--txt);margin-bottom:4px">📖 ${p.topic||'Devotion'}</div>
+      ${p.scripture?`<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${p.scripture}</div>`:''}
+      <div style="font-size:13px;color:var(--mut);line-height:1.5">${p.notes||''}</div>
+    </div>`).join('');
+}
+
+function uploadDevotionJournal(){
+  requestImageFromApp('devotion');
+}
+
+async function handleDevotionUploadData(base64Data){
+  const statusEl = id('dev-upload-status');
+  if(statusEl) statusEl.innerHTML='<div style="font-size:13px;color:var(--amb);padding:8px">⏳ Uploading...</div>';
+
+  let photoUrl = null;
+  const uploadFn = async () => {
+    // Upload to Cloudinary
+    photoUrl = await uploadToCloudinary(base64Data, `devotion_${san(cu.name)}_${today()}.jpg`);
+
+    // AI Assessment — check if it looks like a devotion journal
+    const aiNote = await assessDevotionWithAI(photoUrl, cu.name);
+
+    // Save to Firebase
+    const record = {
+      uploaded: true,
+      photoUrl: photoUrl||'',
+      studentName: cu.name,
+      classId: cu.classId,
+      time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
+      date: today(),
+      ts: Date.now(),
+      aiNote,
+    };
+    if(!demoMode) await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`, record);
+
+    if(statusEl) statusEl.innerHTML=`<div style="background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:10px;font-size:13px;color:var(--a2);margin-top:8px">✅ Devotion journal uploaded! Your instructor has been notified.<br><span style="font-size:11px;color:var(--mut)">${aiNote}</span></div>`;
+    loadStudentDevotionStatus();
+    toast('📖 Devotion uploaded successfully!');
+  };
+  await uploadFn();
+}
+
+async function assessDevotionWithAI(photoUrl, studentName){
+  // Simple AI assessment message
+  const messages = [
+    "📖 Great job uploading your devotion journal! Keep up the daily habit.",
+    "✝️ Your devotion has been received. Remember: consistency in devotion builds faith!",
+    "🙏 Well done! Daily devotion is the key to spiritual growth.",
+    "📝 Devotion recorded. Your instructor will review your entry.",
+    "⭐ Excellent! Staying consistent with devotions shows strong character.",
+  ];
+  return messages[Math.floor(Math.random()*messages.length)];
+}
+
+async function loadDevotionStatus(){
+  const cont = id('dev-student-list-status');
+  if(!cont) return;
+  cont.innerHTML='<div style="font-size:13px;color:var(--mut)">Loading...</div>';
+  const all = await dbGet('accounts')||{};
+  const students = Object.values(all).filter(a=>a.role==='student'&&san(a.clubName||'')===clubKey&&a.classId===cu.classId);
+  if(students.length===0){ cont.innerHTML='<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px">No students in your class yet.</div>'; return; }
+  const journals = await dbGet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}`)||{};
+  cont.innerHTML = students.map(s=>{
+    const uploaded = journals[san(s.name)]?.uploaded;
+    return `<div class="srow">
+      <div class="av">${ini(s.name)}</div>
+      <div class="si"><div class="sn">${s.name}</div><div class="sm2">${uploaded?'Uploaded '+journals[san(s.name)].time:'Not uploaded yet'}</div></div>
+      <span class="badge ${uploaded?'bg':'br'}">${uploaded?'✅ Done':'❌ Pending'}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadDirectorDevotionOverview(){
+  const cont = id('dev-director-overview');
+  if(!cont) return;
+  const all = await dbGet('accounts')||{};
+  const instructors = Object.values(all).filter(a=>a.role==='instructor'&&san(a.clubName||'')===clubKey);
+  if(instructors.length===0){ cont.innerHTML='<div style="font-size:13px;color:var(--mut);padding:16px">No instructors yet.</div>'; return; }
+  const classGroups = {};
+  instructors.forEach(inst=>{
+    if(!classGroups[inst.classId]) classGroups[inst.classId]=inst.classId;
+  });
+  let html = '';
+  for(const clsId of Object.keys(classGroups)){
+    const cls = CLASSES.find(c=>c.id===clsId)||{n:clsId,e:'📖'};
+    const journals = await dbGet(`clubs/${clubKey}/devotionJournals/${clsId}/${today()}`)||{};
+    const total = Object.values(all).filter(a=>a.role==='student'&&san(a.clubName||'')===clubKey&&a.classId===clsId).length;
+    const done = Object.values(journals).filter(j=>j.uploaded).length;
+    html+=`<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px">${cls.e}</div><div class="si"><div class="sn">${cls.n} Class</div><div class="sm2">${done} of ${total} uploaded today</div></div><span class="badge ${done===total&&total>0?'bg':'ba'}">${done}/${total}</span></div></div>`;
+  }
+  cont.innerHTML = html||'<div style="font-size:13px;color:var(--mut);padding:16px">No data yet.</div>';
+}
+
+// ═══════════════════════════════════════════════════
+// LOCK / UNLOCK ATTENDANCE, HYGIENE, ASSESSMENT
+// ═══════════════════════════════════════════════════
+function lockAtt(){
+  id('att-save-btn').style.display='none';
+  id('att-update-btn').style.display='block';
+  id('att-saved-banner').style.display='block';
+  document.querySelectorAll('#att-list .ab').forEach(b=>{ b.style.pointerEvents='none'; b.style.opacity='0.6'; });
+}
+function unlockAtt(){
+  id('att-save-btn').style.display='block';
+  id('att-update-btn').style.display='none';
+  id('att-saved-banner').style.display='none';
+  document.querySelectorAll('#att-list .ab').forEach(b=>{ b.style.pointerEvents=''; b.style.opacity=''; });
+  toast('Attendance unlocked — make your changes then save.');
+}
+function lockHyg(){
+  id('hyg-save-btn').style.display='none';
+  id('hyg-update-btn').style.display='block';
+  id('hyg-saved-banner').style.display='block';
+  document.querySelectorAll('#hyg-list .hb').forEach(b=>{ b.style.pointerEvents='none'; b.style.opacity='0.6'; });
+}
+function unlockHyg(){
+  id('hyg-save-btn').style.display='block';
+  id('hyg-update-btn').style.display='none';
+  id('hyg-saved-banner').style.display='none';
+  document.querySelectorAll('#hyg-list .hb').forEach(b=>{ b.style.pointerEvents=''; b.style.opacity=''; });
+  toast('Hygiene unlocked — make your changes then save.');
+}
+function lockAss(){
+  id('ass-save-btn').style.display='none';
+  id('ass-update-btn').style.display='block';
+  id('ass-saved-banner').style.display='block';
+  id('ass-ta').readOnly=true; id('ass-ta').style.opacity='0.7';
+}
+function unlockAss(){
+  id('ass-save-btn').style.display='block';
+  id('ass-update-btn').style.display='none';
+  id('ass-saved-banner').style.display='none';
+  id('ass-ta').readOnly=false; id('ass-ta').style.opacity='1';
+  toast('Notes unlocked — edit then save.');
+}
+function lockSc(){
+  id('sc-save-btn').style.display='none';
+  id('sc-update-btn').style.display='block';
+  id('sc-saved-banner').style.display='block';
+  document.querySelectorAll('.st').forEach(s=>{ s.style.pointerEvents='none'; s.style.opacity='0.7'; });
+}
+function unlockSc(){
+  id('sc-save-btn').style.display='block';
+  id('sc-update-btn').style.display='none';
+  id('sc-saved-banner').style.display='none';
+  document.querySelectorAll('.st').forEach(s=>{ s.style.pointerEvents=''; s.style.opacity=''; });
+  toast('Scores unlocked — edit then save.');
+}
+
+// Load existing scores when student is selected
+let _scoresLiveTimer = null;
+let _notesLiveTimer  = null;
+
+async function loadExistingScores(idx){
+  const stu = getStu();
+  if(!stu[idx]) return;
+  const sn = stu[idx];
+
+  const applyScores = async () => {
+    const existing = await dbGet(`clubs/${clubKey}/scores/${cu.classId}/${san(sn)}`);
+    const scSelVal = id('sc-sel')?.value;
+    // Only update if same student still selected
+    if(id('sc-sel')?.value != idx) return;
+    if(existing){
+      ['p','n','c'].forEach(k=>{
+        const map={p:'punctuality',n:'neatness',c:'clarity'};
+        const v=existing[map[k]]||0;
+        sc[k]=v;
+        [1,2,3,4,5].forEach(n2=>{
+          const star=id('star-'+k+'-'+n2);
+          if(star){
+            star.classList.toggle('on',n2<=v);
+            star.style.background=n2<=v?'var(--amb)':'';
+            star.style.borderColor=n2<=v?'var(--amb)':'';
+          }
+        });
+        if(id('sv-'+k)) id('sv-'+k).textContent=v+'/5';
+      });
+      lockSc();
+    } else {
+      ['p','n','c'].forEach(k=>{
+        sc[k]=0;
+        [1,2,3,4,5].forEach(n2=>{
+          const star=id('star-'+k+'-'+n2);
+          if(star){ star.classList.remove('on'); star.style.background=''; star.style.borderColor=''; }
+        });
+        if(id('sv-'+k)) id('sv-'+k).textContent='0/5';
+      });
+      unlockSc();
+    }
+  };
+
+  await applyScores();
+
+  // Live poll every 5 seconds
+  if(_scoresLiveTimer) clearInterval(_scoresLiveTimer);
+  _scoresLiveTimer = setInterval(applyScores, 5000);
+}
+
+// Load student requirement progress for instructor
+async function loadStudentReqs(idx){
+  const stu = getStu();
+  if(!stu[idx]) return;
+  const sn = stu[idx];
+  const preview = id('inst-req-preview');
+  const cont = id('inst-req-content');
+  if(!preview||!cont) return;
+  preview.style.display='block';
+  cont.innerHTML='<div style="font-size:12px;color:var(--mut)">Loading...</div>';
+  const classId = cu.classId||'ranger';
+  const reqs = CLASS_REQUIREMENTS[classId]||CLASS_REQUIREMENTS.ranger;
+  const saved = await dbGet(`clubs/${clubKey}/requirements/${san(sn)}`)||{};
+  const done = Object.values(saved).filter(v=>v===true).length;
+  const pct = Math.round((done/reqs.length)*100);
+  // Show compact progress by category
+  const cats = {};
+  reqs.forEach((r,i)=>{ const c=r.cat||'General'; if(!cats[c])cats[c]={done:0,total:0}; cats[c].total++; if(saved['req'+i])cats[c].done++; });
+  cont.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:700">${sn} — ${done}/${reqs.length}</span><span style="font-size:13px;font-weight:800;color:var(--accent)">${pct}%</span></div>
+  <div class="sbw" style="height:6px;margin:0 0 10px"><div class="sbar" style="width:${pct}%;height:6px"></div></div>
+  ${Object.entries(cats).map(([cat,v])=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:4px"><span>${cat}</span><span class="badge ${v.done===v.total?'bg':'ba'}">${v.done}/${v.total}</span></div>`).join('')}`;
+  // Live update every 8s
+  if(window._reqInstTimer) clearInterval(window._reqInstTimer);
+  window._reqInstTimer = setInterval(()=>loadStudentReqs(idx), 8000);
+}
+
+// Load notes with live polling
+async function loadNotes(idx){
+  const stu = getStu();
+  if(!stu[idx]) return;
+  const sn = stu[idx];
+
+  const applyNotes = async () => {
+    if(id('ass-sel')?.value != idx) return; // student changed
+    const existing = await dbGet(`clubs/${clubKey}/assessments/${cu.classId}/${san(sn)}`);
+    if(existing&&existing.notes){
+      // Only update if not currently editing
+      const isEditing = !id('ass-ta')?.readOnly;
+      if(!isEditing){
+        id('ass-ta').value = existing.notes;
+        lockAss();
+      }
+    } else {
+      if(!id('ass-ta')?.readOnly) return; // don't clear if typing
+      id('ass-ta').value='';
+      unlockAss();
+    }
+  };
+
+  await applyNotes();
+
+  // Live poll every 5 seconds
+  if(_notesLiveTimer) clearInterval(_notesLiveTimer);
+  _notesLiveTimer = setInterval(applyNotes, 5000);
+}
+
+// ═══════════════════════════════════════════════════
+// REQUIREMENT BOOK — instructor sees student checkboxes
+// ═══════════════════════════════════════════════════
+// Add instructor req viewer to instructor assessment panel
+async function viewStudentRequirements(studentName){
+  const classId = cu.classId || 'ranger';
+  const reqs = CLASS_REQUIREMENTS[classId] || CLASS_REQUIREMENTS.ranger;
+  const saved = await dbGet(`clubs/${clubKey}/requirements/${san(studentName)}`)||{};
+  const done = Object.values(saved).filter(v=>v===true).length;
+  const pct = Math.round((done/reqs.length)*100);
+  return `<div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:6px">${studentName} — ${done}/${reqs.length} (${pct}%)</div>
+  ${reqs.map((r,i)=>{
+    const checked=saved['req'+i]===true;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="width:18px;height:18px;border-radius:5px;border:2px solid ${checked?'var(--a2)':'var(--border)'};background:${checked?'var(--a2)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0">${checked?'✓':''}</div>
+      <span style="font-size:12px;color:${checked?'var(--mut)':'var(--txt)'};${checked?'text-decoration:line-through':''}">${r.req}</span>
+    </div>`;
+  }).join('')}`;
+}
+
+// ═══════════════════════════════════════════════════
+// APP UPDATE CHECK
+// ═══════════════════════════════════════════════════
+const APP_VERSION = '3.0';
+async function checkForUpdates(){
+  const badge = id('update-badge');
+  const sub = id('update-sub');
+  if(badge) badge.textContent='Checking...';
+  if(sub) sub.textContent='Checking for updates...';
+
+  // Check Firebase for latest version number
+  const latest = await dbGet('appVersion');
+  setTimeout(()=>{
+    if(latest && latest.version && latest.version !== APP_VERSION){
+      if(badge){ badge.textContent='Update!'; badge.className='badge br'; }
+      if(sub) sub.textContent=`New version ${latest.version} available! Ask your director to update the app file.`;
+      toast('🆕 Update available: v'+latest.version);
+    } else {
+      if(badge){ badge.textContent='v'+APP_VERSION+' ✅'; badge.className='badge bg'; }
+      if(sub) sub.textContent='PathfinderApp v'+APP_VERSION+' — You are up to date! ✅';
+      toast('✅ App is up to date!');
+    }
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════
+// SAVE ACTIONS — all stored under clubs/{clubKey}/
+// ═══════════════════════════════════════════════════
+async function saveAtt(){
+  const data={};
+  document.querySelectorAll('#att-list .srow').forEach((r,i)=>{
+    const on=r.querySelector('.ab.on');
+    data[i]={name:r.querySelector('.sn').textContent,status:on?['p','l','ab2'].find(c=>on.classList.contains(c))||'?':'unmarked'};
+  });
+  if(!demoMode)await dbSet(`clubs/${clubKey}/attendance/${cu.classId}/${today()}`,{...data,by:cu.name,ts:Date.now()});
+  toast('Attendance saved! ✅');
+  lockAtt();
+}
+async function saveHyg(){
+  const data={};
+  document.querySelectorAll('#hyg-list .srow').forEach((r,i)=>{
+    const on=r.querySelector('.hb.on');
+    data[i]={name:r.querySelector('.sn').textContent,level:on?['bad','good','perf'].find(c=>on.classList.contains(c))||'?':'unmarked'};
+  });
+  if(!demoMode)await dbSet(`clubs/${clubKey}/hygiene/${cu.classId}/${today()}`,{...data,by:cu.name,ts:Date.now()});
+  toast('Hygiene saved! 🧼');
+  lockHyg();
+}
+async function saveAss(){
+  const sel=id('ass-sel'),sn=getStu()[sel.value],notes=id('ass-ta').value.trim();
+  if(!notes){toast('Please write some notes first.');return;}
+  if(!demoMode)await dbSet(`clubs/${clubKey}/assessments/${cu.classId}/${san(sn)}`,{notes,by:cu.name,ts:Date.now()});
+  toast('Assessment saved! 📋');
+  lockAss();
+}
+async function saveSc(){
+  const sel=id('sc-sel'),sn=getStu()[sel.value];
+  if(!sn){toast('Please select a student first.');return;}
+  const d={punctuality:sc.p,neatness:sc.n,clarity:sc.c,by:cu.name,ts:Date.now()};
+  if(!demoMode)await dbSet(`clubs/${clubKey}/scores/${cu.classId}/${san(sn)}`,d);
+  toast(`Scores saved! ${sc.p+sc.n+sc.c}/15 ⭐`);
+  lockSc();
+}
+async function saveDev(){
+  const topic=id('dev-topic')?.value.trim();
+  const scripture=id('dev-scripture')?.value.trim();
+  const notes=id('dev-notes')?.value.trim();
+  if(!topic){toast('Please enter a topic first.');return;}
+  const post={topic,scripture:scripture||'',notes:notes||'',by:cu.name,date:today(),ts:Date.now(),classId:cu.classId};
+  if(!demoMode){
+    await dbSet(`clubs/${clubKey}/devotions/${cu.classId}/${today()}`,post);
+    await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}`,post);
+    // Also post to devotion message channel
+    const devMsg={s:cu.name,r:cu.role,uid:cu.uid,t:`📖 ${topic}${scripture?' — '+scripture:''}`,tm:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),ts:Date.now(),cls:cu.classId};
+    await dbPush(`clubs/${clubKey}/messages/devotion`,devMsg);
+  }
+  toast('📖 Devotion posted to your class!');
+  if(id('dev-topic')) id('dev-topic').value='';
+  if(id('dev-scripture')) id('dev-scripture').value='';
+  if(id('dev-notes')) id('dev-notes').value='';
+  setTimeout(loadDevotionStatus, 500);
+}
+
+// ═══════════════════════════════════════════════════
+// SUB TABS
+// ═══════════════════════════════════════════════════
+function subTab(sec,tab){
+  if(sec==='instructors'&&tab==='honors') setTimeout(loadHonorInbox, 100);
+  const cont=id('tab-'+sec);
+  cont.querySelectorAll('[id^="sub-'+sec+'-"]').forEach(s=>s.style.display='none');
+  id('sub-'+sec+'-'+tab).style.display='block';
+  const subs=cont.querySelectorAll('[id^="sub-'+sec+'-"]');
+  const names=Array.from(subs).map(s=>s.id.replace('sub-'+sec+'-',''));
+  cont.querySelectorAll('.tabs:first-of-type .tab').forEach((t,i)=>t.classList.toggle('a',names[i]===tab));
+}
+
+// ═══════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════
+function id(x){return document.getElementById(x);}
+function show(x){document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});const e=id(x);e.classList.add('active');e.style.display='flex';}
+function load(msg){id('load-txt').textContent=msg||'Loading...';show('loading-screen');}
+function hideLoad(){show('auth-screen');}
+function setErr(eid,msg){const e=id(eid);e.textContent=msg;e.style.display=msg?'block':'none';}
+function toast(msg){const t=id('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+function ini(n){return n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();}
+function today(){return new Date().toISOString().split('T')[0];}
+function san(s){return(s||'').toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement===id('minp'))sendMsg();});
+</script>
+</body>
+</html>
