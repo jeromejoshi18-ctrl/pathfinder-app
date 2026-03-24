@@ -484,7 +484,8 @@ select.inp{-webkit-appearance:none;}
       <div class="tab" onclick="subTab('instructors','hygiene')">🧼 Hygiene</div>
       <div class="tab" onclick="subTab('instructors','assessment')">📋 Assess.</div>
       <div class="tab" onclick="subTab('instructors','honors')">🏅 Honors</div>
-
+      <div class="tab" onclick="subTab('instructors','journals')">📓 Journals</div>
+      <div class="tab" onclick="subTab('instructors','stuuploads')">📤 Uploads</div>
     </div>
     <div id="sub-instructors-attendance">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -508,6 +509,7 @@ select.inp{-webkit-appearance:none;}
       <div class="tabs">
         <div class="tab a" onclick="assTab('notes')">📝 Notes</div>
         <div class="tab" onclick="assTab('scoring')">⭐ Scoring</div>
+        <div class="tab" onclick="assTab('requirements')">📋 Req. Book</div>
       </div>
       <div id="ass-notes">
         <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
@@ -549,6 +551,40 @@ select.inp{-webkit-appearance:none;}
       <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5">Students submit completed honors here for your review. Approve or send back for revision.</div>
       <div id="honor-inbox"></div>
       <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6);margin-top:4px" onclick="loadHonorInbox()">🔄 Refresh</button>
+    </div>
+
+    <!-- JOURNALS VIEWER -->
+    <div id="sub-instructors-journals" style="display:none">
+      <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+        <span>STUDENT JOURNALS</span>
+        <span style="font-size:10px;color:var(--a2);font-weight:700">● LIVE</span>
+      </div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.5">
+        Journal entries uploaded by students in your class.
+      </div>
+      <select class="inp" id="journal-stu-sel" style="margin-bottom:12px" onchange="loadStudentJournals(this.value)">
+        <option value="all">— All Students —</option>
+      </select>
+      <div id="inst-journals-list"></div>
+      <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6);margin-top:4px" onclick="loadStudentJournals(id('journal-stu-sel').value)">🔄 Refresh</button>
+    </div>
+
+    <!-- UPLOADS VIEWER -->
+    <div id="sub-instructors-stuuploads" style="display:none">
+      <div class="ct">STUDENT UPLOADS</div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.5">
+        All files uploaded by students — journals, requirement pages, and more.
+      </div>
+      <div class="tabs">
+        <div class="tab a" onclick="instUploadTab('journals')">📓 Journals</div>
+        <div class="tab" onclick="instUploadTab('requirements')">📋 Req. Pages</div>
+        <div class="tab" onclick="instUploadTab('all')">📁 All</div>
+      </div>
+      <select class="inp" id="uploads-stu-sel" style="margin-bottom:12px" onchange="loadInstUploads(instCurrentUploadTab, this.value)">
+        <option value="all">— All Students —</option>
+      </select>
+      <div id="inst-uploads-list"></div>
+      <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6);margin-top:4px" onclick="loadInstUploads(instCurrentUploadTab, id('uploads-stu-sel').value)">🔄 Refresh</button>
     </div>
 
   </div>
@@ -746,52 +782,92 @@ let pendingUploadType = null; // which upload is waiting for image from MIT AI2
 
 // ═══════════════════════════════════════════════════
 // MIT APP INVENTOR IMAGE BRIDGE
-// MIT AI2 blocks call receiveImageFromApp(base64, type)
 // ═══════════════════════════════════════════════════
-function receiveImageFromApp(base64Data, uploadType){
-  // Called by MIT App Inventor after user picks image
-  // base64Data = full base64 string e.g. data:image/jpeg;base64,...
-  // uploadType = 'honor' | 'journal' | 'requirement' | 'devotion' | 'mgport'
-  const data = base64Data.startsWith('data:') ? base64Data : 'data:image/jpeg;base64,'+base64Data;
-  pendingUploadType = uploadType || pendingUploadType;
+// CAMERA / FILE UPLOAD SYSTEM
+// Works on GitHub Pages (browser) and MIT App Inventor
+// ═══════════════════════════════════════════════════
 
-  if(pendingUploadType === 'honor'){
+// Called by MIT App Inventor blocks after user picks image
+// base64Data can be: full data URL OR raw base64 string
+function receiveImageFromApp(base64Data, uploadType){
+  if(!base64Data){ toast('No image received. Try again.'); return; }
+  // Ensure it's a proper data URL
+  const data = (typeof base64Data === 'string' && base64Data.startsWith('data:'))
+    ? base64Data
+    : 'data:image/jpeg;base64,' + base64Data;
+
+  const type = uploadType || pendingUploadType || 'journal';
+
+  if(type === 'honor'){
+    // Just store and preview — don't upload yet, upload happens on submit
     honorPhotoData = data;
-    if(id('honor-preview-img')) id('honor-preview-img').src = data;
-    if(id('honor-photo-preview')) id('honor-photo-preview').style.display='block';
-    if(id('honor-photo-zone')) id('honor-photo-zone').style.display='none';
-    if(id('honor-photo-name')) id('honor-photo-name').textContent='Photo selected ✓';
+    const pi = id('honor-preview-img');
+    const pb = id('honor-photo-preview');
+    const uz = id('honor-photo-zone');
+    const pn = id('honor-photo-name');
+    if(pi){ pi.src = data; pi.style.display='block'; }
+    if(pb) pb.style.display = 'block';
+    if(uz) uz.style.display = 'none';
+    if(pn) pn.textContent = '✓ Photo selected — tap Send to submit';
     toast('📷 Photo attached!');
-  } else if(pendingUploadType === 'devotion'){
+  } else if(type === 'devotion'){
     handleDevotionUploadData(data);
-  } else if(pendingUploadType === 'journal'){
-    handleFileUploadData(data, 'journal', 'jfiles');
-  } else if(pendingUploadType === 'requirement'){
-    handleFileUploadData(data, 'requirement', 'rfiles');
-  } else if(pendingUploadType === 'mgport'){
-    handleFileUploadData(data, 'mgport', 'mgp-files');
+  } else {
+    // journal, requirement, mgport
+    const containerMap = {
+      journal: 'jfiles',
+      requirement: 'rfiles',
+      mgport: 'mgp-files',
+    };
+    handleFileUploadData(data, type, containerMap[type]||'jfiles');
   }
   pendingUploadType = null;
 }
 
-// Tell MIT App Inventor which type of image to pick
+// Creates a fresh file input every time (most reliable cross-browser approach)
+// No 'capture' attribute — lets user choose camera OR gallery
 function requestImageFromApp(type){
   pendingUploadType = type;
-  // MIT AI2 listens for this via WebViewer.WebViewStringChange
-  // In AI2 blocks: when WebViewer.PageLoaded → call EvaluateJavaScript
-  // The app sets window.uploadRequest which AI2 reads
-  window.uploadRequest = type;
-  // Try standard file input as fallback (works in browser testing)
+  window.uploadRequest = type; // MIT App Inventor bridge signal
+
+  // Always create a brand new input — reusing causes issues on iOS
   const inp = document.createElement('input');
-  inp.type='file'; inp.accept='image/*';
-  inp.onchange = e => {
-    const file = e.target.files[0];
-    if(!file) return;
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.style.cssText = 'position:fixed;top:-100px;left:-100px;width:1px;height:1px;opacity:0;';
+  document.body.appendChild(inp);
+
+  inp.addEventListener('change', function handler(e){
+    inp.removeEventListener('change', handler);
+    document.body.removeChild(inp); // clean up DOM
+    const file = e.target.files && e.target.files[0];
+    if(!file){
+      pendingUploadType = null;
+      return;
+    }
+    // Validate it's an image
+    if(!file.type.startsWith('image/')){
+      toast('⚠️ Please select an image file.');
+      pendingUploadType = null;
+      return;
+    }
+    // Validate size — max 10MB
+    if(file.size > 10 * 1024 * 1024){
+      toast('⚠️ Image too large. Please use a photo under 10MB.');
+      pendingUploadType = null;
+      return;
+    }
     const reader = new FileReader();
     reader.onload = ev => receiveImageFromApp(ev.target.result, type);
+    reader.onerror = () => {
+      toast('⚠️ Could not read image. Try again.');
+      pendingUploadType = null;
+    };
     reader.readAsDataURL(file);
-  };
-  inp.click();
+  });
+
+  // Small delay before click — fixes some mobile browser issues
+  setTimeout(() => inp.click(), 50);
 }
 let navHistory = []; // tracks page navigation for back button
 const MG=[
@@ -1733,37 +1809,73 @@ async function buildStudents(){
     id('dev-att').innerHTML=emptyMsg;
     return;
   }
-  id('att-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="ar${i}"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div><div class="sm2">${cu.cn}</div></div><div class="abtns"><button class="ab p" onclick="markA(${i},'p')">P</button><button class="ab l" onclick="markA(${i},'l')">L</button><button class="ab ab2" onclick="markA(${i},'ab2')">A</button></div></div>`).join('');
-  id('hyg-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="hr${i}"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div></div><div class="abtns"><button class="hb bad" onclick="markH(${i},'bad')">Bad</button><button class="hb good" onclick="markH(${i},'good')">Good</button><button class="hb perf" onclick="markH(${i},'perf')">✓ Perfect</button></div></div>`).join('');
+  const btnBase='padding:6px 9px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1.5px solid;transition:all .15s;';
+  id('att-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="ar${i}">
+    <div class="av">${ini(s)}</div>
+    <div class="si"><div class="sn">${s}</div><div class="sm2">${cu.cn}</div></div>
+    <div style="display:flex;gap:5px">
+      <button id="ar${i}-p"  style="${btnBase}color:#059669;border-color:#059669;background:transparent" onclick="markA(${i},'p')">P</button>
+      <button id="ar${i}-l"  style="${btnBase}color:#d97706;border-color:#d97706;background:transparent" onclick="markA(${i},'l')">L</button>
+      <button id="ar${i}-ab2" style="${btnBase}color:#dc2626;border-color:#dc2626;background:transparent" onclick="markA(${i},'ab2')">A</button>
+    </div>
+  </div>`).join('');
+  const hygBase='flex:1;padding:6px 3px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1.5px solid;transition:all .15s;';
+  id('hyg-list').innerHTML=stu.map((s,i)=>`<div class="srow" id="hr${i}">
+    <div class="av">${ini(s)}</div>
+    <div class="si"><div class="sn">${s}</div></div>
+    <div style="display:flex;gap:5px;flex:1;margin-left:8px">
+      <button id="hr${i}-bad"  style="${hygBase}color:#dc2626;border-color:#dc2626;background:transparent" onclick="markH(${i},'bad')">Bad</button>
+      <button id="hr${i}-good" style="${hygBase}color:#d97706;border-color:#d97706;background:transparent" onclick="markH(${i},'good')">Good</button>
+      <button id="hr${i}-perf" style="${hygBase}color:#059669;border-color:#059669;background:transparent" onclick="markH(${i},'perf')">✓ Perfect</button>
+    </div>
+  </div>`).join('');
   id('dev-att').innerHTML=stu.map((s,i)=>`<div class="srow"><div class="av">${ini(s)}</div><div class="si"><div class="sn">${s}</div></div><div class="abtns"><button class="ab p" onclick="this.closest('.abtns').querySelectorAll('.ab').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P</button><button class="ab ab2" onclick="this.closest('.abtns').querySelectorAll('.ab').forEach(b=>b.classList.remove('on'));this.classList.add('on')">A</button></div></div>`).join('');
 }
-function markA(i,s){
-  const r=id('ar'+i);
-  r.querySelectorAll('.ab').forEach(b=>{
-    b.classList.remove('on');
-    b.style.background='';b.style.color='';b.style.borderColor='';
-  });
-  const btn=r.querySelector('.ab.'+s);
-  if(btn){
-    btn.classList.add('on');
-    const colors={p:['var(--a2)','#fff'],ab2:['var(--red)','#fff'],l:['var(--amb)','#fff']};
-    const c=colors[s]||['var(--accent)','#fff'];
-    btn.style.background=c[0];btn.style.color=c[1];btn.style.borderColor=c[0];
-  }
+// Attendance button colors
+const ATT_COLORS = {
+  p:   {bg:'#059669',color:'#fff',border:'#059669'},
+  l:   {bg:'#d97706',color:'#fff',border:'#d97706'},
+  ab2: {bg:'#dc2626',color:'#fff',border:'#dc2626'},
+};
+const HYG_COLORS = {
+  bad:  {bg:'#dc2626',color:'#fff',border:'#dc2626'},
+  good: {bg:'#d97706',color:'#fff',border:'#d97706'},
+  perf: {bg:'#059669',color:'#fff',border:'#059669'},
+};
+const ATT_DEFAULT = {
+  p:   {bg:'transparent',color:'#059669',border:'#059669'},
+  l:   {bg:'transparent',color:'#d97706',border:'#d97706'},
+  ab2: {bg:'transparent',color:'#dc2626',border:'#dc2626'},
+};
+const HYG_DEFAULT = {
+  bad:  {bg:'transparent',color:'#dc2626',border:'#dc2626'},
+  good: {bg:'transparent',color:'#d97706',border:'#d97706'},
+  perf: {bg:'transparent',color:'#059669',border:'#059669'},
+};
+
+function applyBtnStyle(el, c){
+  if(!el) return;
+  el.style.background   = c.bg;
+  el.style.color        = c.color;
+  el.style.borderColor  = c.border;
 }
-function markH(i,s){
-  const r=id('hr'+i);
-  r.querySelectorAll('.hb').forEach(b=>{
-    b.classList.remove('on');
-    b.style.background='';b.style.color='';b.style.borderColor='';
+
+function markA(i, s){
+  // Reset all 3 buttons for this row
+  ['p','l','ab2'].forEach(k=>{
+    applyBtnStyle(id('ar'+i+'-'+k), ATT_DEFAULT[k]);
   });
-  const btn=r.querySelector('.hb.'+s);
-  if(btn){
-    btn.classList.add('on');
-    const colors={bad:['var(--red)','#fff'],good:['var(--amb)','#fff'],perf:['var(--a2)','#fff']};
-    const c=colors[s]||['var(--accent)','#fff'];
-    btn.style.background=c[0];btn.style.color=c[1];btn.style.borderColor=c[0];
-  }
+  // Highlight selected
+  applyBtnStyle(id('ar'+i+'-'+s), ATT_COLORS[s]);
+}
+
+function markH(i, s){
+  // Reset all 3 buttons for this row
+  ['bad','good','perf'].forEach(k=>{
+    applyBtnStyle(id('hr'+i+'-'+k), HYG_DEFAULT[k]);
+  });
+  // Highlight selected
+  applyBtnStyle(id('hr'+i+'-'+s), HYG_COLORS[s]);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1773,11 +1885,11 @@ function buildAssDDs(){
   const stu=getStu();
   if(stu.length===0){
     const empty='<option>No students yet</option>';
-    id('ass-sel').innerHTML=empty;id('sc-sel').innerHTML=empty;
+    ['ass-sel','sc-sel','req-stu-sel'].forEach(x=>{ const el=id(x); if(el) el.innerHTML=empty; });
     return;
   }
   const opts=stu.map((s,i)=>`<option value="${i}">${s}</option>`).join('');
-  id('ass-sel').innerHTML=opts;id('sc-sel').innerHTML=opts;
+  ['ass-sel','sc-sel','req-stu-sel'].forEach(x=>{ const el=id(x); if(el) el.innerHTML=opts; });
 }
 function loadNotes(i){id('ass-ta').value='';}
 function buildStars(){
@@ -1788,12 +1900,15 @@ function buildStars(){
 }
 function setStar(k,v){sc[k]=v;[1,2,3,4,5].forEach(n=>id('star-'+k+'-'+n)?.classList.toggle('on',n<=v));id('sv-'+k).textContent=v+'/5';}
 function assTab(tab){
-  id('ass-notes').style.display=tab==='notes'?'block':'none';
-  id('ass-scoring').style.display=tab==='scoring'?'block':'none';
-  document.querySelectorAll('#sub-instructors-assessment > .tabs .tab').forEach((t,i)=>t.classList.toggle('a',i===(tab==='notes'?0:1)));
-  // Reload data for currently selected student when switching tabs
-  if(tab==='scoring'){ const sel=id('sc-sel'); if(sel&&sel.value!==undefined) loadExistingScores(sel.value); }
-  if(tab==='notes'){ const sel=id('ass-sel'); if(sel&&sel.value!==undefined) loadNotes(sel.value); }
+  id('ass-notes').style.display        = tab==='notes'?'block':'none';
+  id('ass-scoring').style.display      = tab==='scoring'?'block':'none';
+  id('ass-requirements').style.display = tab==='requirements'?'block':'none';
+  document.querySelectorAll('#sub-instructors-assessment > .tabs .tab').forEach((t,i)=>{
+    t.classList.toggle('a', ['notes','scoring','requirements'][i]===tab);
+  });
+  if(tab==='scoring'){     const sel=id('sc-sel');      if(sel&&sel.value!==undefined) loadExistingScores(sel.value); }
+  if(tab==='notes'){       const sel=id('ass-sel');     if(sel&&sel.value!==undefined) loadNotes(sel.value); }
+  if(tab==='requirements'){ const sel=id('req-stu-sel'); if(sel&&sel.value!==undefined) loadInstReqBook(sel.value); }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1901,12 +2016,8 @@ async function buildDirDash(){
 const upMap={journal:'jfiles',honor:'hfiles',requirement:'rfiles',mgport:'mgp-files'};
 const upIco={journal:'📓',honor:'🏅',requirement:'📋',mgport:'📁'};
 function fakeUp(type){
-  upCtrs[type]=(upCtrs[type]||0)+1;
-  const cont=id(upMap[type]);if(!cont)return;
-  const d=document.createElement('div');d.className='ufile';
-  d.innerHTML=`<div style="font-size:22px">${upIco[type]}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--txt)">${cap(type)}_${upCtrs[type]}.pdf</div><div style="font-size:11px;color:var(--mut)">${new Date().toLocaleDateString()} · ${cu.cn}</div></div><span class="badge bg">✓ Done</span>`;
-  cont.prepend(d);toast('File uploaded! 📤');
-  if(!demoMode)dbPush(`clubs/${clubKey}/uploads/${cu.uid}/${type}`,{name:`${cap(type)}_${upCtrs[type]}.pdf`,ts:Date.now(),cls:cu.classId});
+  // Open camera/gallery picker for this upload type
+  requestImageFromApp(type);
 }
 
 // ═══════════════════════════════════════════════════
@@ -2030,27 +2141,47 @@ async function toggleReq(i){
 // ═══════════════════════════════════════════════════
 async function uploadToCloudinary(base64Data, filename){
   try{
-    // Convert base64 to blob
-    const res = await fetch(base64Data);
-    const blob = await res.blob();
+    if(!base64Data){ console.error('No image data'); return null; }
+
+    // Build FormData directly from base64 string
+    // This avoids the extra fetch() call which can fail on some browsers
     const formData = new FormData();
-    formData.append('file', blob, filename||'honor-photo.jpg');
+
+    // Convert base64 to Blob directly
+    const arr = base64Data.split(',');
+    const mime = (arr[0].match(/:(.*?);/)||['','image/jpeg'])[1];
+    const bstr = atob(arr[1]||arr[0]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--) u8arr[n] = bstr.charCodeAt(n);
+    const blob = new Blob([u8arr], {type: mime});
+
+    formData.append('file', blob, filename||'upload.jpg');
     formData.append('upload_preset', CLD_PRESET);
-    formData.append('folder', `pathfinderapp/${clubKey}`);
+    formData.append('folder', `pathfinderapp/${clubKey||'default'}`);
+    formData.append('cloud_name', CLD_CLOUD);
 
     const r = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
+
+    if(!r.ok){
+      const errText = await r.text();
+      console.error('Cloudinary HTTP error:', r.status, errText);
+      return null;
+    }
+
     const data = await r.json();
     if(data.secure_url){
-      return data.secure_url; // return the CDN URL
+      console.log('Cloudinary upload success:', data.secure_url);
+      return data.secure_url;
     } else {
-      console.error('Cloudinary error:', data);
+      console.error('Cloudinary no URL:', data);
       return null;
     }
   } catch(e){
-    console.error('Upload failed:', e);
+    console.error('Cloudinary upload exception:', e);
     return null;
   }
 }
@@ -2062,23 +2193,19 @@ function pickHonorPhoto(){
   requestImageFromApp('honor');
 }
 function previewHonorPhoto(input){
-  if(!input.files||!input.files[0]) return;
+  // Now handled by receiveImageFromApp — this is kept for compatibility
+  if(!input||!input.files||!input.files[0]) return;
   const file = input.files[0];
   const reader = new FileReader();
-  reader.onload = e => {
-    id('honor-preview-img').src = e.target.result;
-    id('honor-photo-name').textContent = file.name;
-    id('honor-photo-preview').style.display = 'block';
-    id('honor-photo-zone').style.display = 'none';
-    honorPhotoData = e.target.result; // store base64
-  };
+  reader.onload = e => receiveImageFromApp(e.target.result, 'honor');
   reader.readAsDataURL(file);
 }
 function clearHonorPhoto(){
   honorPhotoData = null;
-  id('honor-photo-input').value = '';
-  id('honor-photo-preview').style.display = 'none';
-  id('honor-photo-zone').style.display = 'block';
+  if(id('honor-photo-preview')) id('honor-photo-preview').style.display = 'none';
+  if(id('honor-photo-zone'))    id('honor-photo-zone').style.display = 'block';
+  if(id('honor-preview-img'))   id('honor-preview-img').src = '';
+  if(id('honor-photo-name'))    id('honor-photo-name').textContent = '';
 }
 // placeholder for dropdown populate (no longer used)
 async function populateHonorSubmitDropdown(){ }
@@ -2095,11 +2222,17 @@ async function submitHonorToInstructor(){
 
   let photoUrl = null;
   if(honorPhotoData){
-    toast('📤 Uploading photo to Cloudinary...');
-    photoUrl = await uploadToCloudinary(honorPhotoData, `${san(cu.name)}_${san(honorName)}.jpg`);
-    if(!photoUrl){
+    // Show uploading in the zone
+    if(id('honor-photo-name')) id('honor-photo-name').textContent = '⏳ Uploading photo...';
+    photoUrl = await uploadToCloudinary(honorPhotoData, `${san(cu?.name||'student')}_${san(honorName)}_${Date.now()}.jpg`);
+    if(photoUrl){
+      if(id('honor-photo-name')) id('honor-photo-name').textContent = '✅ Photo uploaded!';
+    } else {
+      if(id('honor-photo-name')) id('honor-photo-name').textContent = '⚠️ Photo failed — submitting without it';
       toast('⚠️ Photo upload failed. Submitting without photo.');
     }
+  } else {
+    // No photo — that is fine, just submit text
   }
 
   const submission = {
@@ -2266,34 +2399,51 @@ function uploadDevotionJournal(){
 
 async function handleDevotionUploadData(base64Data){
   const statusEl = id('dev-upload-status');
-  if(statusEl) statusEl.innerHTML='<div style="font-size:13px;color:var(--amb);padding:8px">⏳ Uploading...</div>';
+  if(statusEl) statusEl.innerHTML='<div style="font-size:13px;color:var(--amb);padding:8px">⏳ Uploading your devotion journal...</div>';
+  toast('📤 Uploading...');
 
-  let photoUrl = null;
-  const uploadFn = async () => {
-    // Upload to Cloudinary
-    photoUrl = await uploadToCloudinary(base64Data, `devotion_${san(cu.name)}_${today()}.jpg`);
+  // Upload photo to Cloudinary
+  const photoUrl = await uploadToCloudinary(
+    base64Data,
+    `devotion_${san(cu?.name||'student')}_${today()}_${Date.now()}.jpg`
+  );
 
-    // AI Assessment — check if it looks like a devotion journal
-    const aiNote = await assessDevotionWithAI(photoUrl, cu.name);
+  // AI encouragement message
+  const aiNote = await assessDevotionWithAI(photoUrl, cu?.name);
 
-    // Save to Firebase
-    const record = {
-      uploaded: true,
-      photoUrl: photoUrl||'',
-      studentName: cu.name,
-      classId: cu.classId,
-      time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
-      date: today(),
-      ts: Date.now(),
-      aiNote,
-    };
-    if(!demoMode) await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`, record);
-
-    if(statusEl) statusEl.innerHTML=`<div style="background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:10px;font-size:13px;color:var(--a2);margin-top:8px">✅ Devotion journal uploaded! Your instructor has been notified.<br><span style="font-size:11px;color:var(--mut)">${aiNote}</span></div>`;
-    loadStudentDevotionStatus();
-    toast('📖 Devotion uploaded successfully!');
+  // Save record to Firebase
+  const record = {
+    uploaded: true,
+    photoUrl: photoUrl || '',
+    studentName: cu?.name || '',
+    classId: cu?.classId || '',
+    time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
+    date: today(),
+    ts: Date.now(),
+    aiNote,
   };
-  await uploadFn();
+
+  if(!demoMode){
+    await dbSet(
+      `clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`,
+      record
+    );
+  }
+
+  // Update status UI
+  if(statusEl) statusEl.innerHTML = photoUrl
+    ? `<div style="background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:10px;font-size:13px;color:var(--a2);margin-top:8px">
+        ✅ Devotion journal uploaded!<br>
+        <span style="font-size:11px;color:var(--mut)">${aiNote}</span>
+       </div>`
+    : `<div style="background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:10px;font-size:13px;color:var(--red);margin-top:8px">
+        ⚠️ Upload failed. Please check your internet and try again.
+       </div>`;
+
+  if(photoUrl){
+    toast('📖 Devotion uploaded! Instructor notified.');
+    loadStudentDevotionStatus();
+  }
 }
 
 async function assessDevotionWithAI(photoUrl, studentName){
@@ -2453,7 +2603,71 @@ async function loadExistingScores(idx){
   _scoresLiveTimer = setInterval(applyScores, 5000);
 }
 
-// Load student requirement progress for instructor
+// ── INSTRUCTOR: Live Requirement Book ──
+let _instReqTimer = null;
+
+async function loadInstReqBook(idx){
+  const stu = getStu();
+  if(!stu[idx]) return;
+  const sn = stu[idx];
+  const cont = id('inst-req-book');
+  if(!cont) return;
+
+  const fetch_and_render = async () => {
+    // Check student still selected
+    if(id('req-stu-sel')?.value != idx) return;
+    const classId = cu.classId||'ranger';
+    const reqs = CLASS_REQUIREMENTS[classId]||CLASS_REQUIREMENTS.ranger;
+    const saved = await dbGet(`clubs/${clubKey}/requirements/${san(sn)}`)||{};
+    const total = reqs.length;
+    const done  = Object.values(saved).filter(v=>v===true).length;
+    const pct   = Math.round((done/total)*100);
+
+    // Group by category
+    const cats = {};
+    reqs.forEach((r,i)=>{
+      const cat=r.cat||'📋 General';
+      if(!cats[cat]) cats[cat]=[];
+      cats[cat].push({...r,i});
+    });
+
+    let html = `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:14px;font-weight:800;color:var(--txt)">${sn}</span>
+        <span style="font-size:13px;font-weight:800;color:var(--accent)">${done}/${total} · ${pct}%</span>
+      </div>
+      <div class="sbw" style="height:8px;margin:0"><div class="sbar" style="width:${pct}%;height:8px"></div></div>
+    </div>`;
+
+    Object.entries(cats).forEach(([catName, items])=>{
+      const catDone = items.filter(r=>saved['req'+r.i]===true).length;
+      html += `<div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between">
+          <span>${catName}</span>
+          <span class="badge ${catDone===items.length?'bg':'ba'}">${catDone}/${items.length}</span>
+        </div>`;
+      items.forEach(r=>{
+        const checked = saved['req'+r.i]===true;
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:8px;margin-bottom:5px;border:1px solid var(--border)">
+          <div style="width:20px;height:20px;border-radius:5px;background:${checked?'#059669':'transparent'};border:2px solid ${checked?'#059669':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;flex-shrink:0">${checked?'✓':''}</div>
+          <span style="font-size:12px;color:${checked?'var(--mut)':'var(--txt)'};${checked?'text-decoration:line-through':''};flex:1;line-height:1.4">${r.req}</span>
+          ${checked?`<span class="badge bg" style="font-size:9px;flex-shrink:0">Done</span>`:''}
+        </div>`;
+      });
+      html += '</div>';
+    });
+
+    cont.innerHTML = html;
+  };
+
+  await fetch_and_render();
+
+  // Live update every 5 seconds
+  if(_instReqTimer) clearInterval(_instReqTimer);
+  _instReqTimer = setInterval(fetch_and_render, 5000);
+}
+
+// Load student requirement progress for instructor (compact version for notes tab)
 async function loadStudentReqs(idx){
   const stu = getStu();
   if(!stu[idx]) return;
@@ -2554,14 +2768,140 @@ async function checkForUpdates(){
   }, 1000);
 }
 
+
+// ═══════════════════════════════════════════════════
+// INSTRUCTOR: JOURNAL & UPLOAD VIEWERS
+// ═══════════════════════════════════════════════════
+let instCurrentUploadTab = 'journals';
+
+async function populateInstStudentSelects(){
+  const all = await dbGet('accounts')||{};
+  const students = Object.values(all).filter(a=>
+    a.role==='student' && san(a.clubName||'')===clubKey && a.classId===cu.classId
+  );
+  const opts = '<option value="all">— All Students —</option>' +
+    students.map((s,i)=>`<option value="${san(s.name)}">${s.name}</option>`).join('');
+  ['journal-stu-sel','uploads-stu-sel'].forEach(elId=>{
+    const el=id(elId); if(el) el.innerHTML=opts;
+  });
+}
+
+async function loadStudentJournals(stuKey){
+  const cont = id('inst-journals-list');
+  if(!cont) return;
+  cont.innerHTML='<div style="font-size:13px;color:var(--mut);padding:12px">Loading...</div>';
+  const all = await dbGet(`clubs/${clubKey}/uploads`)||{};
+  const items = [];
+  Object.entries(all).forEach(([uid, types])=>{
+    const journals = types.journal||{};
+    Object.values(journals).forEach(entry=>{
+      if(stuKey==='all' || san(entry.name||uid)===stuKey || uid.includes(stuKey)){
+        items.push({...entry, uid, type:'journal'});
+      }
+    });
+  });
+  // Also check by class
+  const allAccounts = await dbGet('accounts')||{};
+  const classStudentKeys = Object.entries(allAccounts)
+    .filter(([k,a])=>a.role==='student'&&san(a.clubName||'')===clubKey&&a.classId===cu.classId)
+    .map(([k])=>k);
+
+  const filtered = items.filter(item=> stuKey==='all' || classStudentKeys.includes(item.uid));
+
+  if(filtered.length===0){
+    cont.innerHTML='<div style="text-align:center;padding:24px;color:var(--mut);font-size:13px">No journal entries uploaded yet.</div>';
+    return;
+  }
+  filtered.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  cont.innerHTML = filtered.map(item=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${item.url?'10px':'0'}">
+        <div style="font-size:22px">📓</div>
+        <div class="si">
+          <div class="sn">${item.name||'Journal Entry'}</div>
+          <div class="sm2">${new Date(item.ts||Date.now()).toLocaleDateString()} · ${item.cls||cu.classId}</div>
+        </div>
+        <span class="badge bg">✓ Uploaded</span>
+      </div>
+      ${item.url?`<img src="${item.url}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`:''}
+    </div>`).join('');
+}
+
+let _instUploadsTimer = null;
+async function instUploadTab(tab){
+  instCurrentUploadTab = tab;
+  ['journals','requirements','all'].forEach(t=>{
+    const tabs = document.querySelectorAll('#sub-instructors-stuuploads > .tabs .tab');
+    tabs.forEach((tb,i)=>tb.classList.toggle('a',['journals','requirements','all'][i]===tab));
+  });
+  await loadInstUploads(tab, id('uploads-stu-sel')?.value||'all');
+}
+
+async function loadInstUploads(type, stuKey){
+  const cont = id('inst-uploads-list');
+  if(!cont) return;
+  cont.innerHTML='<div style="font-size:13px;color:var(--mut);padding:12px">Loading...</div>';
+
+  const allAccounts = await dbGet('accounts')||{};
+  const classStudents = Object.entries(allAccounts)
+    .filter(([k,a])=>a.role==='student'&&san(a.clubName||'')===clubKey&&a.classId===cu.classId)
+    .reduce((acc,[k,a])=>{acc[k]=a;return acc;},{});
+
+  const allUploads = await dbGet(`clubs/${clubKey}/uploads`)||{};
+  const items = [];
+
+  Object.entries(allUploads).forEach(([uid, types])=>{
+    const studentAcc = classStudents[uid];
+    if(!studentAcc) return; // not in this class
+    if(stuKey!=='all' && san(studentAcc.name||'')!==stuKey) return;
+
+    const typeList = type==='all'?['journal','requirement','mgport']:
+                     type==='journals'?['journal']:['requirement'];
+    typeList.forEach(t=>{
+      const uploads = types[t]||{};
+      Object.values(uploads).forEach(entry=>{
+        items.push({...entry, studentName:studentAcc.name, uid, uploadType:t});
+      });
+    });
+  });
+
+  if(items.length===0){
+    cont.innerHTML='<div style="text-align:center;padding:24px;color:var(--mut);font-size:13px">No uploads found.</div>';
+    return;
+  }
+
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const typeIcons={journal:'📓',requirement:'📋',mgport:'📁'};
+  const typeLabels={journal:'Journal',requirement:'Req. Page',mgport:'Portfolio'};
+
+  cont.innerHTML = items.map(item=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${item.url?'10px':'0'}">
+        <div class="av" style="background:var(--accent)">${ini(item.studentName||'?')}</div>
+        <div class="si">
+          <div class="sn">${item.studentName||'Student'}</div>
+          <div class="sm2">${typeLabels[item.uploadType]||'Upload'} · ${new Date(item.ts||Date.now()).toLocaleDateString()}</div>
+        </div>
+        <span class="badge bb">${typeIcons[item.uploadType]||'📄'} ${typeLabels[item.uploadType]||''}</span>
+      </div>
+      ${item.url?`<img src="${item.url}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`:'<div style="font-size:12px;color:var(--mut);font-style:italic">No preview available</div>'}
+    </div>`).join('');
+}
+
 // ═══════════════════════════════════════════════════
 // SAVE ACTIONS — all stored under clubs/{clubKey}/
 // ═══════════════════════════════════════════════════
 async function saveAtt(){
   const data={};
   document.querySelectorAll('#att-list .srow').forEach((r,i)=>{
-    const on=r.querySelector('.ab.on');
-    data[i]={name:r.querySelector('.sn').textContent,status:on?['p','l','ab2'].find(c=>on.classList.contains(c))||'?':'unmarked'};
+    const name=r.querySelector('.sn')?.textContent||'';
+    // Find which button has active bg
+    let status='unmarked';
+    ['p','l','ab2'].forEach(k=>{
+      const btn=id('ar'+i+'-'+k);
+      if(btn && btn.style.background && btn.style.background!=='transparent') status=k;
+    });
+    data[i]={name,status};
   });
   if(!demoMode)await dbSet(`clubs/${clubKey}/attendance/${cu.classId}/${today()}`,{...data,by:cu.name,ts:Date.now()});
   toast('Attendance saved! ✅');
@@ -2570,8 +2910,13 @@ async function saveAtt(){
 async function saveHyg(){
   const data={};
   document.querySelectorAll('#hyg-list .srow').forEach((r,i)=>{
-    const on=r.querySelector('.hb.on');
-    data[i]={name:r.querySelector('.sn').textContent,level:on?['bad','good','perf'].find(c=>on.classList.contains(c))||'?':'unmarked'};
+    const name=r.querySelector('.sn')?.textContent||'';
+    let level='unmarked';
+    ['bad','good','perf'].forEach(k=>{
+      const btn=id('hr'+i+'-'+k);
+      if(btn && btn.style.background && btn.style.background!=='transparent') level=k;
+    });
+    data[i]={name,level};
   });
   if(!demoMode)await dbSet(`clubs/${clubKey}/hygiene/${cu.classId}/${today()}`,{...data,by:cu.name,ts:Date.now()});
   toast('Hygiene saved! 🧼');
