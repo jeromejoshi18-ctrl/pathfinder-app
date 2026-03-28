@@ -751,6 +751,10 @@ select.inp{-webkit-appearance:none;}
         <div><div class="set-label">App Version</div><div class="set-sub" id="update-sub">PathfinderApp v3.0 — Tap to check for updates</div></div>
         <div class="badge bb" id="update-badge">v3.0</div>
       </div>
+      <div class="set-row" style="cursor:pointer" onclick="checkConnections().then(r=>toast('Firebase: '+(r.fbOk?'✅':'❌')+' · Cloudinary: '+(r.cldOk?'✅':'❌')))">
+        <div><div class="set-label">🔌 Test Connections</div><div class="set-sub">Check Firebase & Cloudinary are working</div></div>
+        <div style="color:var(--mut)">›</div>
+      </div>
       <div class="set-row"><div><div class="set-label">Data Storage</div><div class="set-sub" id="set-storage">Checking...</div></div><div class="badge" id="set-storage-badge">...</div></div>
     </div>
 
@@ -1508,7 +1512,8 @@ id('hdr-sub').textContent=`${cu.ce} ${cu.cn} · ${roleLabel}${slotLabel}`;
   id('hm-role').textContent=`${roleLabel} · ${cu.clubName||'Pathfinder Club'}`;
   id('hdr-mode').innerHTML=demoMode
     ?'<span style="color:var(--amb);font-size:11px">⚠️ Demo</span>'
-    :'<span style="color:var(--a2);font-size:11px">● Live</span>';
+    :'<span style="color:var(--a2);font-size:11px" id="conn-status">● Live</span>';
+  if(!demoMode) checkConnections();
 
   // Settings panel
   id('set-av').textContent=cu.ini;
@@ -1678,81 +1683,143 @@ function switchChat(chanId){
   listenMsgs(chanId);
 }
 
+// Track rendered message keys to avoid re-rendering same messages
+let renderedMsgKeys = new Set();
+let lastMsgCount = 0;
+
+function msgBubbleHTML(m){
+  const mine = m.uid===cu?.uid || m.s===cu?.name;
+  const roleBadge = m.r==='director'?'ba':m.r==='instructor'?'bb':m.r==='masterguide'?'bp':'bg';
+  const dispRole = m.roleLabel || m.r || 'student';
+  return `<div class="mbub ${mine?'me':'them'}" data-key="${m.key||m.ts||''}">
+    ${!mine?`<div class="bn">${esc(m.s||'')} <span class="badge ${roleBadge}">${dispRole}</span></div>`:''}
+    <div class="bt">${esc(m.t||m.text||'')}</div>
+    <div class="btime">${m.tm||m.time||''}</div>
+  </div>`;
+}
+
 function listenMsgs(chanId){
+  renderedMsgKeys = new Set();
+  lastMsgCount = 0;
+  const list = id('msg-list');
+  if(list) list.innerHTML = '';
+
   if(demoMode){
     let msgs=[];
-    if(chanId==='global')msgs=demoMsgs.global||[];
-    else if(chanId.startsWith('devotion-'))msgs=demoMsgs.devotion||[];
+    if(chanId==='global') msgs=demoMsgs.global||[];
+    else if(chanId.startsWith('devotion-')) msgs=demoMsgs.devotion||[];
     else{
       const clsId=chanId.replace('class-','');
       msgs=(demoMsgs[clsId]||[]);
-      if(cu.role!=='director')msgs=msgs.filter(m=>!m.cls||m.cls==='all'||m.cls===cu.classId);
+      if(cu.role!=='director') msgs=msgs.filter(m=>!m.cls||m.cls==='all'||m.cls===cu.classId);
     }
-    renderMsgs(msgs,chanId);
+    renderMsgs(msgs, chanId);
     return;
   }
   const path=`clubs/${clubKey}/messages/${chanId}`;
   dbListen(path, raw=>{
-    if(!raw){renderMsgs([],chanId);return;}
-    const msgs=Object.values(raw).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
-    renderMsgs(msgs,chanId);
+    if(!raw){ renderMsgs([], chanId); return; }
+    const msgs=Object.values(raw).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-80);
+    renderMsgs(msgs, chanId);
   }).then(timer=>{ msgOff=timer; });
 }
 
-function renderMsgs(msgs,chanId){
+function renderMsgs(msgs, chanId){
   const list=id('msg-list');
-  if(!list)return;
-  const isDev=chanId.startsWith('devotion-');
-  let html='';
-  if(isDev){
-    const v=DEVOTION_VERSES[new Date().getDay()%DEVOTION_VERSES.length];
-    html+=`<div class="dev-verse"><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:6px">📖 TODAY'S VERSE</div><div style="font-size:15px;font-style:italic;line-height:1.6">${v.v}</div><div class="dev-ref">${v.r}</div></div>`;
+  if(!list) return;
+
+  // First render — build full list
+  if(lastMsgCount === 0){
+    const isDev = chanId && chanId.startsWith('devotion-');
+    let html = '';
+    if(isDev){
+      const v=DEVOTION_VERSES[new Date().getDay()%DEVOTION_VERSES.length];
+      html+=`<div class="dev-verse"><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:6px">📖 TODAY'S VERSE</div><div style="font-size:15px;font-style:italic;line-height:1.6">${v.v}</div><div class="dev-ref">${v.r}</div></div>`;
+    }
+    if(msgs.length===0){
+      html+=`<div id="no-msgs-placeholder" style="text-align:center;padding:30px 20px;color:var(--mut);font-size:14px">No messages yet. Be the first! 👋</div>`;
+    } else {
+      msgs.forEach(m=>{ renderedMsgKeys.add(m.key||m.ts||''); });
+      html += msgs.map(m=>msgBubbleHTML(m)).join('');
+    }
+    list.innerHTML=html;
+    list.scrollTop=list.scrollHeight;
+    lastMsgCount=msgs.length;
+    if(msgs.length>0) checkNewMessages(chanId||activeChat, msgs);
+    return;
   }
-  if(msgs.length===0){
-    html+=`<div style="text-align:center;padding:30px 20px;color:var(--mut);font-size:14px">No messages yet. Be the first! 👋</div>`;
-  } else {
-    html+=msgs.map(m=>{
-      const mine=m.uid===cu?.uid||m.s===cu?.name;
-      const roleBadge=m.r==='director'?'ba':m.r==='instructor'?'bb':m.r==='masterguide'?'bp':'bg';
-      const dispRole = m.roleLabel || m.r || 'student';
-      return `<div class="mbub ${mine?'me':'them'}">
-        ${!mine?`<div class="bn">${esc(m.s||'')} <span class="badge ${roleBadge}">${dispRole}</span></div>`:''}
-        <div class="bt">${esc(m.t||m.text||'')}</div>
-        <div class="btime">${m.tm||m.time||''}</div></div>`;
-    }).join('');
+
+  // Subsequent renders — only append NEW messages (no flicker!)
+  if(msgs.length > lastMsgCount){
+    const placeholder=id('no-msgs-placeholder');
+    if(placeholder) placeholder.remove();
+    const newMsgs = msgs.slice(lastMsgCount);
+    const wasAtBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+    newMsgs.forEach(m=>{
+      const key = m.key||m.ts||'';
+      if(renderedMsgKeys.has(key)) return;
+      renderedMsgKeys.add(key);
+      const div=document.createElement('div');
+      div.innerHTML=msgBubbleHTML(m);
+      list.appendChild(div.firstChild);
+    });
+    lastMsgCount=msgs.length;
+    // Only auto-scroll if user was already at bottom
+    if(wasAtBottom) list.scrollTop=list.scrollHeight;
+    checkNewMessages(chanId||activeChat, msgs);
   }
-  list.innerHTML=html;
-  setTimeout(()=>{if(list)list.scrollTop=list.scrollHeight;},80);
-  if(msgs&&msgs.length>0) checkNewMessages(chanId||activeChat, msgs);
 }
 
 async function sendMsg(){
-  const inp=id('minp'),txt=inp.value.trim();
-  if(!txt)return;
-  // Students cannot post in devotion channels
+  const inp=id('minp'), txt=inp.value.trim();
+  if(!txt) return;
+
+  // Read-only checks
   if(activeChat.startsWith('devotion-')&&cu.role==='student'){
-    toast('📖 Devotion is read-only for students.');return;
+    toast('📖 Devotion is read-only for students.'); return;
   }
-  // Only your own class channel — students, instructors. Directors can post anywhere.
   if(activeChat.startsWith('class-')&&cu.role!=='director'){
     const clsId=activeChat.replace('class-','');
-    if(clsId!==cu.classId){toast('🔒 You can only post in your own class channel.');return;}
+    if(clsId!==cu.classId){toast('🔒 You can only post in your own class channel.'); return;}
   }
+
+  // Clear input immediately for fast feel
   inp.value='';
+  inp.focus();
+
   const now=new Date();
   const roleLabel = cu.role==='instructor'
     ?(cu.slot==='slot1'?'Instructor 1':'Instructor 2')
     :cu.role==='director'
       ?(cu.dirType==='deputy'?'Deputy Director':'Director')
       :'student';
-  const obj={s:cu.name,r:cu.role,roleLabel,uid:cu.uid,t:txt,tm:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),ts:now.getTime(),cls:cu.classId||'all'};
+  const obj={
+    s:cu.name, r:cu.role, roleLabel, uid:cu.uid,
+    t:txt,
+    tm:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
+    ts:now.getTime(),
+    cls:cu.classId||'all'
+  };
+
   if(demoMode){
     const key=activeChat==='global'?'global':activeChat.startsWith('devotion-')?'devotion':activeChat.replace('class-','');
-    if(!demoMsgs[key])demoMsgs[key]=[];
-    demoMsgs[key].push(obj);
-    renderMsgs(demoMsgs[key],activeChat);
+    if(!demoMsgs[key]) demoMsgs[key]=[];
+    demoMsgs[key].push({...obj, key:'demo-'+Date.now()});
+    renderMsgs(demoMsgs[key], activeChat);
   } else {
-    await dbPush(`clubs/${clubKey}/messages/${activeChat}`,obj);
+    // Optimistic UI — show message immediately before Firebase confirms
+    const list=id('msg-list');
+    if(list){
+      const placeholder=id('no-msgs-placeholder');
+      if(placeholder) placeholder.remove();
+      const div=document.createElement('div');
+      div.innerHTML=msgBubbleHTML({...obj, key:'optimistic-'+Date.now()});
+      list.appendChild(div.firstChild);
+      list.scrollTop=list.scrollHeight;
+      lastMsgCount++; // prevent duplicate render when Firebase confirms
+    }
+    // Send to Firebase (no await — fire and forget for speed)
+    dbPush(`clubs/${clubKey}/messages/${activeChat}`, obj);
   }
 }
 
@@ -2159,7 +2226,7 @@ async function uploadToCloudinary(base64Data, filename){
     formData.append('file', blob, filename||'upload.jpg');
     formData.append('upload_preset', CLD_PRESET);
     formData.append('folder', `pathfinderapp/${clubKey||'default'}`);
-    formData.append('cloud_name', CLD_CLOUD);
+    // Note: cloud_name goes in URL only, NOT in form data
 
     const r = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, {
       method: 'POST',
@@ -2888,6 +2955,62 @@ async function loadInstUploads(type, stuKey){
     </div>`).join('');
 }
 
+
+// ═══════════════════════════════════════════════════
+// CONNECTION & UPLOAD DIAGNOSTICS
+// ═══════════════════════════════════════════════════
+async function checkConnections(){
+  const statusEl = id('conn-status');
+
+  // Test Firebase
+  let fbOk = false;
+  try{
+    const r = await fetch(FB_DB+'/.ping.json', {method:'GET', cache:'no-cache'});
+    fbOk = r.ok;
+  } catch(e){ fbOk = false; }
+
+  // Test Cloudinary (simple OPTIONS check)
+  let cldOk = false;
+  try{
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, {method:'OPTIONS'});
+    cldOk = true; // if no network error, Cloudinary is reachable
+  } catch(e){ cldOk = false; }
+
+  if(statusEl){
+    if(fbOk && cldOk){
+      statusEl.innerHTML = '● Firebase ✅ · Cloudinary ✅';
+      statusEl.style.color = 'var(--a2)';
+    } else if(fbOk){
+      statusEl.innerHTML = '● Firebase ✅ · Cloudinary ⚠️';
+      statusEl.style.color = 'var(--amb)';
+    } else {
+      statusEl.innerHTML = '● Offline ❌';
+      statusEl.style.color = 'var(--red)';
+    }
+  }
+
+  console.log('Firebase:', fbOk ? 'OK' : 'FAIL');
+  console.log('Cloudinary:', cldOk ? 'OK' : 'FAIL');
+  return {fbOk, cldOk};
+}
+
+// Test upload directly — call this from browser console to debug
+// testUpload() — uploads a 1x1 red pixel to Cloudinary
+async function testUpload(){
+  toast('🧪 Testing Cloudinary upload...');
+  // 1x1 red JPEG in base64
+  const testBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AJQAB/9k=';
+  const url = await uploadToCloudinary(testBase64, 'test_pixel.jpg');
+  if(url){
+    toast('✅ Cloudinary upload works! URL: '+url.substring(0,40)+'...');
+    console.log('Test upload URL:', url);
+  } else {
+    toast('❌ Cloudinary upload FAILED. Check console for errors.');
+    console.error('Test upload failed');
+  }
+  return url;
+}
+
 // ═══════════════════════════════════════════════════
 // SAVE ACTIONS — all stored under clubs/{clubKey}/
 // ═══════════════════════════════════════════════════
@@ -2984,7 +3107,13 @@ function ini(n){return n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpper
 function today(){return new Date().toISOString().split('T')[0];}
 function san(s){return(s||'').toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement===id('minp'))sendMsg();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && document.activeElement===id('minp')){
+    if(e.shiftKey) return; // Shift+Enter = new line
+    e.preventDefault();
+    sendMsg();
+  }
+});
 </script>
 </body>
 </html>
