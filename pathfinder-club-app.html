@@ -236,10 +236,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ai-dismiss{background:var(--accent);border:none;border-radius:8px;padding:5px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;}
 
 /* ══ DEVOTION CHANNEL ══ */
-.dev-verse{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px;color:#fff;}
-.dev-ref{font-size:12px;color:rgba(255,255,255,.6);font-weight:700;margin-top:6px;}
-
-
 .honor-item:hover{border-color:var(--accent)!important;transform:scale(1.01);}
 .honor-item{transition:all .2s;}
 
@@ -604,7 +600,7 @@ select.inp{-webkit-appearance:none;}
         <div class="ct">MY DEVOTION STATUS</div>
         <div id="dev-student-status"></div>
       </div>
-      <div class="card" id="dev-student-upload-card">
+      <div class="card" id="dev-student-upload-card" style="display:none">
         <div class="ct">UPLOAD MY DEVOTION JOURNAL</div>
         <div style="font-size:12px;color:var(--mut);margin-bottom:10px;line-height:1.5">Upload a photo of your devotion journal entry. The AI will automatically mark your devotion as uploaded.</div>
         <div class="upz" onclick="uploadDevotionJournal()" id="dev-upload-zone">
@@ -829,15 +825,24 @@ function receiveImageFromApp(base64Data, uploadType){
 }
 
 // Creates a fresh file input every time (most reliable cross-browser approach)
-// No 'capture' attribute — lets user choose camera OR gallery
+// Use 'capture' attribute to trigger camera directly on mobile devices
 function requestImageFromApp(type){
   pendingUploadType = type;
-  window.uploadRequest = type; // MIT App Inventor bridge signal
+  
+  // MIT App Inventor communication:
+  // 1. Using window.uploadRequest for simple global check
+  window.uploadRequest = type; 
+  // 2. Using setWebViewString to trigger the 'WebViewStringChange' event in App Inventor blocks
+  if(window.AppInventor){
+    window.AppInventor.setWebViewString("upload:" + type);
+  }
 
   // Always create a brand new input — reusing causes issues on iOS
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = 'image/*';
+  // This triggers the camera directly on Android and iOS
+  inp.setAttribute('capture', 'environment');
   inp.style.cssText = 'position:fixed;top:-100px;left:-100px;width:1px;height:1px;opacity:0;';
   document.body.appendChild(inp);
 
@@ -870,8 +875,8 @@ function requestImageFromApp(type){
     reader.readAsDataURL(file);
   });
 
-  // Small delay before click — fixes some mobile browser issues
-  setTimeout(() => inp.click(), 50);
+  // Call click() synchronously to satisfy browser user-gesture requirements
+  inp.click();
 }
 let navHistory = []; // tracks page navigation for back button
 const MG=[
@@ -1286,8 +1291,8 @@ function checkNewMessages(chanId, msgs){
   const lastSeen = lastMsgTimestamps[chanId]||0;
   if(latest.ts && latest.ts > lastSeen && latest.uid !== cu?.uid){
     // New message from someone else
-    const cls = CLASSES.find(c=>'class-'+c.id===chanId||'devotion-'+c.id===chanId);
-    const chanLabel = chanId==='global'?'Club-wide Chat':cls?(cls.n+(chanId.startsWith('devotion')?'Devotion':'Chat')):'Chat';
+    const cls = CLASSES.find(c=>'class-'+c.id===chanId);
+    const chanLabel = chanId==='global'?'Club-wide Chat':cls?cls.n+' Chat':'Chat';
     showNotification(`💬 New message in ${chanLabel}`, `${latest.s}: ${(latest.t||'').substring(0,60)}`, chanId);
   }
   if(latest.ts) lastMsgTimestamps[chanId]=latest.ts;
@@ -1584,7 +1589,7 @@ function buildHome(){
     {e:'✅',n:'Attendance',d:'Mark class',a:"swTab('instructors')"},
     {e:'🧼',n:'Hygiene',d:'Hygiene check',a:"swTab('instructors');subTab('instructors','hygiene')"},
     {e:'📋',n:'Assessment',d:'Score students',a:"swTab('instructors');subTab('instructors','assessment')"},
-    {e:'📖',n:'Devotion Chat',d:'Class devotion',a:"swTab('messages');switchChat('devotion')"},
+    {e:'💬',n:'Chat',d:'Class messages',a:"swTab('messages')"},
   ];
   else s=[
     {e:'📊',n:'Dashboard',d:'Club overview',a:"swTab('directors')"},
@@ -1603,7 +1608,7 @@ function triggerAINotif(){
   const hour=new Date().getHours();
   const msgs=[];
   if(hour<12)msgs.push({icon:'📖',title:'Good morning, '+cu.name.split(' ')[0]+'!',body:'Your daily devotion is waiting. Take 5 minutes to read and reflect before your day starts.'});
-  if(hour>=12&&hour<17)msgs.push({icon:'⏰',title:'Afternoon check-in',body:'Have you completed your devotion today? It\'s not too late — open the Devotion Chat to see today\'s verse.'});
+  if(hour>=12&&hour<17)msgs.push({icon:'⏰',title:'Afternoon check-in',body:'Have you completed your devotion today? It\'s not too late — open the Devotion section to see today\'s verse.'});
   if(cu.role==='instructor'&&settings.att){
     const day=new Date().getDay();
     if(day===6||day===0)msgs.push({icon:'✅',title:'Sabbath Attendance Reminder',body:'Don\'t forget to mark attendance for today\'s Pathfinder meeting!'});
@@ -1637,22 +1642,19 @@ function buildChatTabs(){
     {id:'global', label:'📢 Club-wide'},
   ];
 
-  // Students + Instructors get their own class channel + class devotion
+  // Students + Instructors get their own class channel
   if(cu.classId && cu.classId!=='all'){
     const cls=CLASSES.find(c=>c.id===cu.classId);
     if(cls){
       channels.push({id:'class-'+cu.classId, label:cls.e+' '+cls.n+' Class'});
-      channels.push({id:'devotion-'+cu.classId, label:'📖 '+cls.n+' Devotion'});
     }
   }
 
-  // Director sees ALL class channels + ALL devotion channels
+  // Director sees ALL class channels
   if(isDir){
     CLASSES.forEach(cls=>{
       if(!channels.find(c=>c.id==='class-'+cls.id))
         channels.push({id:'class-'+cls.id, label:cls.e+' '+cls.n});
-      if(!channels.find(c=>c.id==='devotion-'+cls.id))
-        channels.push({id:'devotion-'+cls.id, label:'📖 '+cls.n+' Dev.'});
     });
   }
 
@@ -1664,19 +1666,12 @@ function switchChat(chanId){
   document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('a'));
   id('ctab-'+chanId)?.classList.add('a');
 
-  // Students can read devotion but not post
   // Instructors + directors can post everywhere
-  const isDevChan = chanId.startsWith('devotion-');
-  const isReadOnly = isDevChan && cu.role==='student';
-  id('minp').placeholder = isReadOnly
-    ? 'Read-only — only instructors post devotions here'
-    : chanId==='global'
-      ? 'Message everyone in your club...'
-      : isDevChan
-        ? 'Post a devotion message to your class...'
-        : 'Message your class...';
-  id('mbar').style.pointerEvents = isReadOnly?'none':'auto';
-  id('mbar').style.opacity = isReadOnly?'0.5':'1';
+  id('minp').placeholder = chanId==='global'
+    ? 'Message everyone in your club...'
+    : 'Message your class...';
+  id('mbar').style.pointerEvents = 'auto';
+  id('mbar').style.opacity = '1';
 
   // Stop previous listener
   if(msgOff){clearInterval(msgOff);msgOff=null;}
@@ -1707,7 +1702,6 @@ function listenMsgs(chanId){
   if(demoMode){
     let msgs=[];
     if(chanId==='global') msgs=demoMsgs.global||[];
-    else if(chanId.startsWith('devotion-')) msgs=demoMsgs.devotion||[];
     else{
       const clsId=chanId.replace('class-','');
       msgs=(demoMsgs[clsId]||[]);
@@ -1730,12 +1724,7 @@ function renderMsgs(msgs, chanId){
 
   // First render — build full list
   if(lastMsgCount === 0){
-    const isDev = chanId && chanId.startsWith('devotion-');
     let html = '';
-    if(isDev){
-      const v=DEVOTION_VERSES[new Date().getDay()%DEVOTION_VERSES.length];
-      html+=`<div class="dev-verse"><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:800;margin-bottom:6px">📖 TODAY'S VERSE</div><div style="font-size:15px;font-style:italic;line-height:1.6">${v.v}</div><div class="dev-ref">${v.r}</div></div>`;
-    }
     if(msgs.length===0){
       html+=`<div id="no-msgs-placeholder" style="text-align:center;padding:30px 20px;color:var(--mut);font-size:14px">No messages yet. Be the first! 👋</div>`;
     } else {
@@ -1774,10 +1763,7 @@ async function sendMsg(){
   const inp=id('minp'), txt=inp.value.trim();
   if(!txt) return;
 
-  // Read-only checks
-  if(activeChat.startsWith('devotion-')&&cu.role==='student'){
-    toast('📖 Devotion is read-only for students.'); return;
-  }
+  // Class-only message check
   if(activeChat.startsWith('class-')&&cu.role!=='director'){
     const clsId=activeChat.replace('class-','');
     if(clsId!==cu.classId){toast('🔒 You can only post in your own class channel.'); return;}
@@ -1802,7 +1788,7 @@ async function sendMsg(){
   };
 
   if(demoMode){
-    const key=activeChat==='global'?'global':activeChat.startsWith('devotion-')?'devotion':activeChat.replace('class-','');
+    const key=activeChat==='global'?'global':activeChat.replace('class-','');
     if(!demoMsgs[key]) demoMsgs[key]=[];
     demoMsgs[key].push({...obj, key:'demo-'+Date.now()});
     renderMsgs(demoMsgs[key], activeChat);
@@ -2329,6 +2315,70 @@ async function submitHonorToInstructor(){
   loadSubmittedHonors();
 }
 
+async function handleFileUploadData(base64Data, type, containerId){
+  if(!base64Data) return;
+  toast('📤 Uploading to Cloudinary...');
+  
+  // Show loading in the container
+  const cont = id(containerId);
+  if(cont) cont.innerHTML = '<div style="font-size:13px;color:var(--amb);padding:12px">⏳ Uploading...</div>';
+
+  const filename = `${san(cu?.name||'student')}_${type}_${Date.now()}.jpg`;
+  const url = await uploadToCloudinary(base64Data, filename);
+
+  if(!url){
+    toast('❌ Upload failed.');
+    loadStudentUploads(type, containerId);
+    return;
+  }
+
+  const entry = {
+    name: cu.name,
+    url: url,
+    ts: Date.now(),
+    cls: cu.classId,
+    type: type
+  };
+
+  if(!demoMode){
+    await dbPush(`clubs/${clubKey}/uploads/${cu.uid}/${type}`, entry);
+  }
+  
+  toast('✅ Uploaded successfully!');
+  loadStudentUploads(type, containerId);
+}
+
+async function loadStudentUploads(type, containerId){
+  const cont = id(containerId);
+  if(!cont) return;
+  
+  if(demoMode){
+    cont.innerHTML = '<div style="font-size:12px;color:var(--mut);text-align:center;padding:12px">Demo mode: Uploads not saved.</div>';
+    return;
+  }
+
+  const data = await dbGet(`clubs/${clubKey}/uploads/${cu.uid}/${type}`) || {};
+  const items = Object.values(data).sort((a,b)=>b.ts - a.ts);
+
+  if(items.length === 0){
+    cont.innerHTML = '<div style="font-size:12px;color:var(--mut);text-align:center;padding:12px">No uploads yet.</div>';
+    return;
+  }
+
+  cont.innerHTML = items.map(item => `
+    <div class="card" style="margin-bottom:8px;padding:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:20px">${upIco[type]||'📄'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${new Date(item.ts).toLocaleDateString()}</div>
+          <div style="font-size:11px;color:var(--mut)">${new Date(item.ts).toLocaleTimeString()}</div>
+        </div>
+      </div>
+      <img src="${item.url}" style="width:100%;border-radius:6px;max-height:150px;object-fit:cover;border:1px solid var(--border)">
+    </div>
+  `).join('');
+}
+
 async function loadSubmittedHonors(){
   const list = id('submitted-honors-list');
   if(!list) return;
@@ -2401,10 +2451,26 @@ async function reviewHonor(key, status){
 }
 
 function upTab(tab){
-  ['journals','honors','requirements'].forEach(t=>id('up-'+t).style.display=t===tab?'block':'none');
-  document.querySelectorAll('#sub-students-uploads > .tabs .tab').forEach((t,i)=>t.classList.toggle('a',['journals','honors','requirements'][i]===tab));
+  const names = ['journals','honors','requirements'];
+  names.forEach(t => {
+    const el = id('up-'+t);
+    if(el) el.style.display = (t===tab ? 'block' : 'none');
+  });
+  
+  // Update active state for upload sub-tabs
+  const upButtons = document.querySelectorAll('#sub-students-uploads > .tabs .tab');
+  upButtons.forEach(btn => {
+    const clickAttr = btn.getAttribute('onclick') || '';
+    if(clickAttr.includes(`upTab('${tab}')`)){
+      btn.classList.add('a');
+    } else if(clickAttr.includes('upTab(')){
+      btn.classList.remove('a');
+    }
+  });
+
+  if(tab==='journals') loadStudentUploads('journal', 'jfiles');
   if(tab==='honors'){ buildHonorsChecklist(); setTimeout(()=>loadSubmittedHonors(),300); }
-  if(tab==='requirements') buildReqChecklist();
+  if(tab==='requirements'){ buildReqChecklist(); loadStudentUploads('requirement', 'rfiles'); }
 }
 
 
@@ -3086,11 +3152,26 @@ async function saveDev(){
 function subTab(sec,tab){
   if(sec==='instructors'&&tab==='honors') setTimeout(loadHonorInbox, 100);
   const cont=id('tab-'+sec);
-  cont.querySelectorAll('[id^="sub-'+sec+'-"]').forEach(s=>s.style.display='none');
-  id('sub-'+sec+'-'+tab).style.display='block';
+  
+  // Hide all sub-sections within this main section
   const subs=cont.querySelectorAll('[id^="sub-'+sec+'-"]');
-  const names=Array.from(subs).map(s=>s.id.replace('sub-'+sec+'-',''));
-  cont.querySelectorAll('.tabs:first-of-type .tab').forEach((t,i)=>t.classList.toggle('a',names[i]===tab));
+  subs.forEach(s=>s.style.display='none');
+  
+  // Show the target sub-section
+  const target=id('sub-'+sec+'-'+tab);
+  if(target) target.style.display='block';
+  
+  // Find the sub-tab buttons and update their active class
+  // We look for buttons that call subTab(sec, ...)
+  const subButtons = cont.querySelectorAll('.tabs .tab');
+  subButtons.forEach(btn => {
+    const clickAttr = btn.getAttribute('onclick') || '';
+    if(clickAttr.includes(`subTab('${sec}','${tab}')`)){
+      btn.classList.add('a');
+    } else if(clickAttr.includes(`subTab('${sec}',`)){
+      btn.classList.remove('a');
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════
