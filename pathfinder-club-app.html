@@ -672,7 +672,10 @@ select.inp{-webkit-appearance:none;}
     <div class="ct">CLASS OVERVIEW</div>
     <div id="dir-classes"></div>
     <div class="div"></div>
-    <div class="ct">HONORS WALL 🏅</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="ct" style="margin-bottom:0">HONOURS WALL 🏅</div>
+      <button onclick="id('group-honour-modal').style.display='flex'" style="background:linear-gradient(135deg,var(--amb),#fbbf24);border:none;border-radius:8px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">✨ Group Honour Check</button>
+    </div>
     <div id="dir-honors"></div>
   </div>
 
@@ -762,6 +765,49 @@ select.inp{-webkit-appearance:none;}
   </div>
 
   <div class="bnav" id="bnav"></div>
+
+  <!-- STUDENT DETAIL MODAL -->
+  <div id="student-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;overflow-y:auto;padding:20px;">
+    <div style="background:var(--card);border-radius:20px;max-width:500px;margin:0 auto;padding:20px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:800;color:var(--txt)" id="modal-title">Student Details</div>
+        <button onclick="closeStudentModal()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--mut);cursor:pointer;font-size:13px">✕ Close</button>
+      </div>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- CLASS MEMBERS MODAL -->
+  <div id="class-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;overflow-y:auto;padding:20px;">
+    <div style="background:var(--card);border-radius:20px;max-width:500px;margin:0 auto;padding:20px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:800;color:var(--txt)" id="class-modal-title">Class Members</div>
+        <button onclick="closeClassModal()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--mut);cursor:pointer;font-size:13px">✕ Close</button>
+      </div>
+      <div id="class-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- GROUP HONOUR MODAL -->
+  <div id="group-honour-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;overflow-y:auto;padding:20px;">
+    <div style="background:var(--card);border-radius:20px;max-width:500px;margin:0 auto;padding:20px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:800;color:var(--txt)">🏅 Group Honour Check</div>
+        <button onclick="id('group-honour-modal').style.display='none'" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--mut);cursor:pointer;font-size:13px">✕</button>
+      </div>
+      <div style="font-size:13px;color:var(--mut);margin-bottom:14px;line-height:1.5">
+        Enter an honour name and the AI will check all students in your club to see who has completed it.
+      </div>
+      <label class="lbl">Honour Name</label>
+      <input class="inp" id="group-honour-input" placeholder="e.g. Camping, First Aid, Cooking..." style="margin-bottom:10px">
+      <label class="lbl">Select Class <span style="font-weight:400;color:var(--mut)">(or All Classes)</span></label>
+      <select class="inp" id="group-honour-class" style="margin-bottom:14px">
+        <option value="all">All Classes</option>
+      </select>
+      <button class="sbtn" onclick="checkGroupHonour()">✨ Check with AI</button>
+      <div id="group-honour-results" style="margin-top:14px"></div>
+    </div>
+  </div>
 </div>
 
 
@@ -2072,7 +2118,25 @@ async function buildDirDash(){
   const activeClasses=Object.keys(classCounts).length;
   if(s)s.innerHTML=`<div class="stcard"><div class="stnum">${activeClasses}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Active Classes</div></div><div class="stcard"><div class="stnum">${studentCount}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Total Students</div></div><div class="stcard"><div class="stnum">${clubAccounts.filter(a=>a.role==='instructor').length}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Instructors</div></div><div class="stcard"><div class="stnum">${clubAccounts.length}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">Total Members</div></div>`;
   const cl=id('dir-classes');
-  if(cl)cl.innerHTML=CLASSES.map(c=>`<div class="srow"><div style="font-size:24px">${c.e}</div><div class="si"><div class="sn">${c.n} Class</div><div class="sm2">${c.g} · ${classCounts[c.id]||0} enrolled</div></div><span class="badge ${classCounts[c.id]?'bg':'ba'}">${classCounts[c.id]?'Active':'Empty'}</span></div>`).join('');
+  if(cl)cl.innerHTML=CLASSES.map(c=>`
+    <div class="srow" onclick="openClassModal('${c.id}','${c.n}','${c.e}')" style="cursor:pointer;transition:opacity .15s" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+      <div style="font-size:24px">${c.e}</div>
+      <div class="si">
+        <div class="sn">${c.n} Class</div>
+        <div class="sm2">${c.g} · ${classCounts[c.id]||0} enrolled</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="badge ${classCounts[c.id]?'bg':'ba'}">${classCounts[c.id]?'Active':'Empty'}</span>
+        <span style="color:var(--mut);font-size:16px">›</span>
+      </div>
+    </div>`).join('');
+  // ── Populate group honour class select ──
+  const ghSel = id('group-honour-class');
+  if(ghSel){
+    ghSel.innerHTML = '<option value="all">All Classes</option>' +
+      CLASSES.filter(c=>classCounts[c.id]).map(c=>`<option value="${c.id}">${c.e} ${c.n}</option>`).join('');
+  }
+
   // ── REAL Honours Wall — pull approved submissions from Firebase ──
   const h=id('dir-honors');
   if(!h) return;
@@ -3069,6 +3133,289 @@ async function testUpload(){
     console.error('Test upload failed');
   }
   return url;
+}
+
+
+// ═══════════════════════════════════════════════════
+// DIRECTOR: CLASS & STUDENT DETAIL MODALS
+// ═══════════════════════════════════════════════════
+async function openClassModal(classId, className, classIcon){
+  const modal = id('class-modal');
+  const title = id('class-modal-title');
+  const cont  = id('class-modal-content');
+  if(!modal) return;
+  title.textContent = `${classIcon} ${className} Class`;
+  cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading members...</div>';
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'flex-start';
+
+  // Load all accounts and filter by class + club
+  const all = await dbGet('accounts')||{};
+  const members = Object.values(all).filter(a=>
+    san(a.clubName||'')===clubKey && a.classId===classId
+  );
+
+  if(members.length===0){
+    cont.innerHTML='<div style="text-align:center;padding:24px;color:var(--mut)">No members in this class yet.</div>';
+    return;
+  }
+
+  // Separate students and instructors
+  const students    = members.filter(m=>m.role==='student');
+  const instructors = members.filter(m=>m.role==='instructor');
+
+  cont.innerHTML = `
+    ${instructors.length>0?`
+      <div class="ct">INSTRUCTORS</div>
+      ${instructors.map(m=>`
+        <div class="srow" style="margin-bottom:6px">
+          <div class="av" style="background:var(--accent)">${ini(m.name)}</div>
+          <div class="si"><div class="sn">${m.name}</div><div class="sm2">${m.slot==='slot1'?'Instructor 1':'Instructor 2'}</div></div>
+          <span class="badge bb">Instructor</span>
+        </div>`).join('')}
+      <div class="div"></div>`:''}
+    <div class="ct">STUDENTS (${students.length})</div>
+    ${students.length===0?'<div style="font-size:13px;color:var(--mut);padding:10px">No students enrolled yet.</div>':
+      students.map(s=>`
+        <div class="srow" onclick="openStudentModal('${san(s.name)}','${s.name}','${classId}')" style="cursor:pointer" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+          <div class="av">${ini(s.name)}</div>
+          <div class="si"><div class="sn">${s.name}</div><div class="sm2">Tap to view details</div></div>
+          <span style="color:var(--mut);font-size:16px">›</span>
+        </div>`).join('')}
+  `;
+}
+
+function closeClassModal(){
+  id('class-modal').style.display='none';
+}
+
+async function openStudentModal(studentKey, studentName, classId){
+  const modal = id('student-modal');
+  const title = id('modal-title');
+  const cont  = id('modal-content');
+  if(!modal) return;
+  title.textContent = studentName;
+  cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading details...</div>';
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'flex-start';
+
+  // Load all data for this student in parallel
+  const [scores, attData, hygData, honorsData, reqData, uploads] = await Promise.all([
+    dbGet(`clubs/${clubKey}/scores/${classId}/${san(studentName)}`),
+    dbGet(`clubs/${clubKey}/attendance/${classId}`),
+    dbGet(`clubs/${clubKey}/hygiene/${classId}`),
+    dbGet(`clubs/${clubKey}/honors/${san(studentName)}`),
+    dbGet(`clubs/${clubKey}/requirements/${san(studentName)}`),
+    dbGet(`clubs/${clubKey}/uploads/${studentKey}`),
+  ]);
+
+  // Process attendance
+  let present=0, late=0, absent=0;
+  if(attData){
+    Object.values(attData).forEach(day=>{
+      if(typeof day !== 'object') return;
+      Object.values(day).forEach(entry=>{
+        if(typeof entry==='object' && entry.name===studentName){
+          if(entry.status==='p') present++;
+          else if(entry.status==='l') late++;
+          else if(entry.status==='ab2') absent++;
+        }
+      });
+    });
+  }
+
+  // Process hygiene — get last recorded level
+  let lastHyg = 'Not recorded';
+  if(hygData){
+    const days = Object.keys(hygData).sort().reverse();
+    for(const day of days){
+      const dayData = hygData[day];
+      if(typeof dayData !== 'object') continue;
+      const entry = Object.values(dayData).find(e=>typeof e==='object'&&e.name===studentName);
+      if(entry){ lastHyg = entry.level==='perf'?'✓ Perfect':entry.level==='good'?'👍 Good':'⚠️ Needs Improvement'; break; }
+    }
+  }
+
+  // Process honours
+  const earnedHonours = honorsData ? Object.entries(honorsData).filter(([k,v])=>v==='earned').map(([k])=>k.replace(/_/g,' ')) : [];
+  const inProgressHonours = honorsData ? Object.entries(honorsData).filter(([k,v])=>v==='progress').map(([k])=>k.replace(/_/g,' ')) : [];
+
+  // Process requirements
+  const reqs = CLASS_REQUIREMENTS[classId]||CLASS_REQUIREMENTS.ranger;
+  const reqDone = reqData ? Object.values(reqData).filter(v=>v===true).length : 0;
+  const reqPct = reqs.length>0?Math.round((reqDone/reqs.length)*100):0;
+
+  // Process uploads
+  const uploadCount = uploads ? Object.values(uploads).reduce((acc,type)=>acc+Object.keys(type||{}).length,0) : 0;
+
+  cont.innerHTML = `
+    <!-- Avatar + Name -->
+    <div style="text-align:center;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:16px">
+      <div class="av" style="width:60px;height:60px;font-size:22px;margin:0 auto 10px">${ini(studentName)}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--txt)">${studentName}</div>
+      <div style="font-size:12px;color:var(--mut);margin-top:3px">${CLASSES.find(c=>c.id===classId)?.e||'⛺'} ${CLASSES.find(c=>c.id===classId)?.n||classId} Class</div>
+    </div>
+
+    <!-- Scores -->
+    <div class="ct">📊 INSTRUCTOR SCORES</div>
+    ${scores ? `
+      <div class="card" style="margin-bottom:12px">
+        ${[{k:'punctuality',l:'Punctuality'},{k:'neatness',l:'Neatness'},{k:'clarity',l:'Clarity'}].map(({k,l})=>{
+          const v=scores[k]||0;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;color:var(--mut)">${l}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:5px;background:var(--border);border-radius:3px">
+                <div style="width:${v*20}%;height:5px;background:var(--amb);border-radius:3px"></div>
+              </div>
+              <span style="font-size:13px;font-weight:800;color:var(--amb)">${v}/5</span>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="font-size:11px;color:var(--mut);margin-top:4px">Total: ${(scores.punctuality||0)+(scores.neatness||0)+(scores.clarity||0)}/15 · by ${scores.by||'Instructor'}</div>
+      </div>` :
+      '<div style="font-size:13px;color:var(--mut);padding:8px 0 12px">No scores yet.</div>'}
+
+    <!-- Attendance -->
+    <div class="ct">✅ ATTENDANCE</div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:20px">
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--a2)">${present}</div><div style="font-size:11px;color:var(--mut)">Present</div></div>
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--amb)">${late}</div><div style="font-size:11px;color:var(--mut)">Late</div></div>
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--red)">${absent}</div><div style="font-size:11px;color:var(--mut)">Absent</div></div>
+        <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--accent)">${present+late+absent}</div><div style="font-size:11px;color:var(--mut)">Total</div></div>
+      </div>
+    </div>
+
+    <!-- Hygiene -->
+    <div class="ct">🧼 PERSONAL HYGIENE</div>
+    <div class="card" style="margin-bottom:12px">
+      <span class="badge ${lastHyg.includes('Perfect')?'bg':lastHyg.includes('Good')?'ba':'br'}">${lastHyg}</span>
+    </div>
+
+    <!-- Requirements -->
+    <div class="ct">📋 REQUIREMENT BOOK</div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--mut)">${reqDone} of ${reqs.length} completed</span>
+        <span style="font-size:13px;font-weight:800;color:var(--accent)">${reqPct}%</span>
+      </div>
+      <div style="height:8px;background:var(--border);border-radius:4px">
+        <div style="width:${reqPct}%;height:8px;background:linear-gradient(90deg,var(--accent),var(--a2));border-radius:4px"></div>
+      </div>
+    </div>
+
+    <!-- Honours -->
+    <div class="ct">🏅 HONOURS</div>
+    <div class="card" style="margin-bottom:12px">
+      ${earnedHonours.length>0?`
+        <div style="font-size:12px;color:var(--mut);margin-bottom:6px">Earned (${earnedHonours.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${earnedHonours.map(h=>`<span class="badge bg">🏅 ${h}</span>`).join('')}</div>`:''}
+      ${inProgressHonours.length>0?`
+        <div style="font-size:12px;color:var(--mut);margin-bottom:6px">In Progress (${inProgressHonours.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${inProgressHonours.map(h=>`<span class="badge ba">📝 ${h}</span>`).join('')}</div>`:''}
+      ${earnedHonours.length===0&&inProgressHonours.length===0?'<div style="font-size:13px;color:var(--mut)">No honours recorded yet.</div>':''}
+    </div>
+
+    <!-- Uploads -->
+    <div class="ct">📤 UPLOADS</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--mut)">${uploadCount} file${uploadCount!==1?'s':''} uploaded</div>
+    </div>
+  `;
+}
+
+function closeStudentModal(){
+  id('student-modal').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// GROUP HONOUR CHECK (AI-assisted)
+// ═══════════════════════════════════════════════════
+async function checkGroupHonour(){
+  const honourName = id('group-honour-input')?.value?.trim();
+  const classFilter = id('group-honour-class')?.value||'all';
+  if(!honourName){ toast('Please enter an honour name.'); return; }
+
+  const resultsEl = id('group-honour-results');
+  resultsEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--mut)">✨ AI is checking all students...</div>';
+
+  // Load all student accounts
+  const all = await dbGet('accounts')||{};
+  const students = Object.values(all).filter(a=>
+    a.role==='student' &&
+    san(a.clubName||'')===clubKey &&
+    (classFilter==='all' || a.classId===classFilter)
+  );
+
+  if(students.length===0){
+    resultsEl.innerHTML='<div style="font-size:13px;color:var(--mut);text-align:center;padding:16px">No students found.</div>';
+    return;
+  }
+
+  // Check each student's honour status
+  const completed = [];
+  const pending   = [];
+
+  await Promise.all(students.map(async s=>{
+    const honorsData = await dbGet(`clubs/${clubKey}/honors/${san(s.name)}`)||{};
+    // Check honour submissions too (approved = definitely completed)
+    const submissions = await dbGet(`clubs/${clubKey}/honorSubmissions/${s.classId}`)||{};
+    const approvedSub = Object.values(submissions).find(sub=>
+      sub.studentName===s.name &&
+      sub.honorName?.toLowerCase()===honourName.toLowerCase() &&
+      sub.status==='approved'
+    );
+    // Check honour checklist
+    const honourKey = san(honourName);
+    const checklistStatus = honorsData[honourKey];
+    const isComplete = approvedSub || checklistStatus==='earned';
+
+    if(isComplete) completed.push(s);
+    else pending.push(s);
+  }));
+
+  const cls = CLASSES.find(c=>c.id===classFilter);
+  const scope = classFilter==='all'?'All Classes':`${cls?.e||''} ${cls?.n||classFilter}`;
+
+  resultsEl.innerHTML = `
+    <div style="background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.25);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:800;color:var(--a2);margin-bottom:4px">✨ AI Honour Check: "${honourName}"</div>
+      <div style="font-size:12px;color:var(--mut)">${scope} · ${students.length} students checked</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="stcard"><div class="stnum" style="color:var(--a2)">${completed.length}</div><div style="font-size:11px;color:var(--mut)">Completed ✅</div></div>
+      <div class="stcard"><div class="stnum" style="color:var(--red)">${pending.length}</div><div style="font-size:11px;color:var(--mut)">Pending ❌</div></div>
+    </div>
+
+    ${completed.length>0?`
+      <div class="ct">✅ COMPLETED</div>
+      ${completed.map(s=>`<div class="srow" style="margin-bottom:6px">
+        <div class="av" style="background:var(--a2)">${ini(s.name)}</div>
+        <div class="si"><div class="sn">${s.name}</div><div class="sm2">${CLASSES.find(c=>c.id===s.classId)?.e||''} ${s.classId}</div></div>
+        <span class="badge bg">✅ Done</span>
+      </div>`).join('')}`:''}
+
+    ${pending.length>0?`
+      <div class="ct" style="margin-top:10px">❌ PENDING</div>
+      ${pending.map(s=>`<div class="srow" style="margin-bottom:6px">
+        <div class="av" style="background:var(--red)">${ini(s.name)}</div>
+        <div class="si"><div class="sn">${s.name}</div><div class="sm2">${CLASSES.find(c=>c.id===s.classId)?.e||''} ${s.classId}</div></div>
+        <span class="badge br">❌ Pending</span>
+      </div>`).join('')}`:''}
+
+    <div style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);border-radius:10px;padding:12px;margin-top:12px">
+      <div style="font-size:12px;color:var(--pur);font-weight:700;margin-bottom:4px">✨ AI Summary</div>
+      <div style="font-size:12px;color:var(--mut);line-height:1.6">
+        ${completed.length===students.length
+          ? `🎉 All ${students.length} students have completed the ${honourName} honour! Great work from the whole group.`
+          : completed.length===0
+          ? `No students have completed the ${honourName} honour yet. Consider scheduling a group session to work on it.`
+          : `${completed.length} out of ${students.length} students (${Math.round(completed.length/students.length*100)}%) have completed the ${honourName} honour. ${pending.length} student${pending.length>1?'s':''} still need${pending.length===1?'s':''} to finish.`}
+      </div>
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════════════════
