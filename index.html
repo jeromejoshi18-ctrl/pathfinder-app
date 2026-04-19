@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
 
 <head>
@@ -2634,13 +2634,24 @@
     function showNotification(t, b, c) { if (notifPermission && Notification.permission === 'granted') new Notification(t, { body: b, tag: c }); else { const ba = document.createElement('div'); ba.style.cssText = 'position:fixed;top:70px;left:12px;right:12px;background:var(--accent);color:#fff;border-radius:12px;padding:12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)'; ba.innerHTML = b; ba.onclick = () => { ba.remove(); swTab('messages'); }; document.body.appendChild(ba); setTimeout(()=>ba.remove(), 5000); } }
     function checkNewMessages(cid, msgs) { if (!msgs || !msgs.length) return; const l = msgs[msgs.length-1]; if (l.ts > (lastMsgTimestamps[cid]||0) && l.uid !== cu?.uid) showNotification('New Message', l.t, cid); lastMsgTimestamps[cid] = l.ts; }
 
-    window.addEventListener('load', () => { 
+    function hideSplash() {
+      const s = id('splash-screen');
+      if (s && s.style.display !== 'none') {
+        s.classList.add('splash-fade');
+        setTimeout(() => s.style.display = 'none', 500);
+      }
+    }
+    window.addEventListener('DOMContentLoaded', () => { 
       try { 
         const sv = localStorage.getItem('pf-settings'); if (sv) settings = JSON.parse(sv); 
         const th = localStorage.getItem('pf-theme')||'light'; applyTheme(th, false); 
       } catch(e){} 
-      setTimeout(() => { const s = id('splash-screen'); if (s) { s.classList.add('splash-fade'); setTimeout(()=>s.style.display='none',500); } }, 5000); 
+      // Faster hide: only wait 1 second instead of 5
+      setTimeout(hideSplash, 1000);
     });
+    // Safety fallback: if load takes too long, hide it anyway
+    setTimeout(hideSplash, 4000);
+
 
     function showAuth() { show('auth-screen'); }
     async function doSignIn() { 
