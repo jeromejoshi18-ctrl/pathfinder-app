@@ -2684,7 +2684,7 @@
       if (cu.role === 'student') tabs = [{ id: 'home', e: 'ðŸ ', l: 'Home' }, { id: 'students', e: 'ðŸ“Š', l: 'My Panel' }, { id: 'devotion', e: 'ðŸ“–', l: 'Devotion' }, { id: 'messages', e: 'ðŸ’¬', l: 'Chat' }, { id: 'upload-history', e: 'ðŸ“œ', l: 'History' }, { id: 'settings', e: 'âš™ï¸', l: 'Settings' }];
       else if (cu.role === 'instructor') tabs = [{ id: 'home', e: 'ðŸ ', l: 'Home' }, { id: 'instructors', e: 'ðŸ“‹', l: 'Instruct.' }, { id: 'devotion', e: 'ðŸ“–', l: 'Devotion' }, { id: 'messages', e: 'ðŸ’¬', l: 'Chat' }, { id: 'settings', e: 'âš™ï¸', l: 'Settings' }];
       else tabs = [{ id: 'home', e: 'ðŸ ', l: 'Home' }, { id: 'directors', e: 'ðŸŽ–', l: 'Director' }, { id: 'devotion', e: 'ðŸ“–', l: 'Devotion' }, { id: 'masterguide', e: 'ðŸ…', l: 'MG' }, { id: 'messages', e: 'ðŸ’¬', l: 'Chat' }, { id: 'settings', e: 'âš™ï¸', l: 'Settings' }];
-      id('bnav').innerHTML = tabs.map((t, i) => <button class="nb" id="nb-" onclick="swTab('')"><span class="ni"></span><span></span></button>).join('');
+      id('bnav').innerHTML = tabs.map((t, i) => `<button class="nb" id="nb-${t.id}" onclick="swTab('${t.id}')"><span class="ni">${t.e}</span><span>${t.l}</span></button>`).join('');
     }
 
     let currentTab = 'home'; 
@@ -2699,7 +2699,7 @@
       if (cu.role === 'student') s = [{ e: 'ðŸ“Š', n: 'My Scores', d: 'Instructor scores', a: "swTab('students')" }, { e: 'ðŸ“¤', n: 'Uploads', d: 'Submit work', a: "swTab('students');subTab('students','uploads')" }, { e: 'ðŸ’¬', n: 'Chat', d: 'Club messages', a: "swTab('messages')" }, { e: 'âš™ï¸', n: 'Settings', d: 'App preferences', a: "swTab('settings')" }];
       else if (cu.role === 'instructor') s = [{ e: 'âœ…', n: 'Attendance', d: 'Mark class', a: "swTab('instructors')" }, { e: 'ðŸ§¼', n: 'Hygiene', d: 'Hygiene check', a: "swTab('instructors');subTab('instructors','hygiene')" }, { e: 'ðŸ“‹', n: 'Assessment', d: 'Score students', a: "swTab('instructors');subTab('instructors','assessment')" }, { e: 'ðŸ’¬', n: 'Chat', d: 'Club messages', a: "swTab('messages')" }];
       else s = [{ e: 'ðŸ“Š', n: 'Dashboard', d: 'Club overview', a: "swTab('directors')" }, { e: 'ðŸ…', n: 'MG Program', d: 'Master Guide', a: "swTab('masterguide')" }, { e: 'ðŸ’¬', n: 'All Chats', d: 'View all channels', a: "swTab('messages')" }, { e: 'âš™ï¸', n: 'Settings', d: 'App preferences', a: "swTab('settings')" }];
-      id('hm-sections').innerHTML = s.map(x => <div class="sc" onclick=""><div style="font-size:28px;margin-bottom:7px"></div><div style="font-size:13px;font-weight:700;margin-bottom:3px;color:var(--txt)"></div><div style="font-size:11px;color:var(--mut)"></div></div>).join('');
+      id('hm-sections').innerHTML = s.map(x => `<div class="sc" onclick="${x.a}"><div style="font-size:28px;margin-bottom:7px">${x.e}</div><div style="font-size:13px;font-weight:700;margin-bottom:3px;color:var(--txt)">${x.n}</div><div style="font-size:11px;color:var(--mut)">${x.d}</div></div>`).join('');
     }
 
     function triggerAINotif() {}
