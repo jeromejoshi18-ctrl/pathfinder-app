@@ -176,10 +176,17 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
         console.error('Initialization error:', e);
     }
+    // Initial Screen
+    if (state.cu && state.cu.uid) {
+        launch();
+    } else {
+        auth.showAuth();
+    }
     
-    // Hide splash after 1.5s (allow time for logo to render)
+    // Hide splash after 1.5s
     setTimeout(ui.hideSplash, 1500);
 });
+
 
 // Global escape hatch for back button
 window.addEventListener('popstate', () => nav.goBack());
