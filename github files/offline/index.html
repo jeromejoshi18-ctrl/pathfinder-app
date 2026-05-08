@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Offline - Pathfinder App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="full-screen" id="offline-screen">
+        <div class="offline-card">
+            <div class="offline-brand">
+                <div class="offline-title">Pathfinder App</div>
+            </div>
+            <div class="offline-icon">🌐</div>
+            <div class="offline-title">Connection Lost</div>
+            <p class="offline-msg">It looks like you're offline. Please check your internet connection to continue using the app.</p>
+            
+            <div class="offline-actions">
+                <button class="retry-btn" onclick="retry()">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function retry() {
+            if (navigator.onLine) {
+                window.location.href = '../index.html';
+            } else {
+                const btn = document.querySelector('.retry-btn');
+                const oldText = btn.textContent;
+                btn.textContent = 'Still Offline...';
+                btn.style.background = '#6b7280';
+                setTimeout(() => {
+                    btn.textContent = oldText;
+                    // Reset to theme color
+                    btn.style.background = ''; 
+                }, 2000);
+            }
+        }
+
+        // Auto-check if connection comes back
+        window.addEventListener('online', () => {
+            window.location.href = '../index.html';
+        });
+    </script>
+</body>
+</html>

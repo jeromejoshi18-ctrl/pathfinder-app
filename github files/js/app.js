@@ -29,9 +29,29 @@
       try { if (window.buildModeBadge) buildModeBadge(); } catch (e) { }
 
       setTimeout(() => {
+        const isLocal = !window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const remoteUrl = 'https://jeromejoshi18-ctrl.github.io/pathfinder-app/';
+
+        // OFFLINE HANDLING
+        if (!navigator.onLine && !demoMode) {
+          console.log('Redirecting to offline screen...');
+          // Ensure we don't loop if already on the offline page (though this script usually isn't there)
+          if (!window.location.pathname.includes('/offline/')) {
+            window.location.href = 'offline/index.html';
+          }
+          return;
+        }
+
+        // ONLINE & LOCAL -> JUMP TO LIVE GITHUB VERSION (FOR UPDATES)
+        if (navigator.onLine && isLocal && !demoMode) {
+          console.log('Connection detected. Jumping to live GitHub version for the latest updates...');
+          window.location.href = remoteUrl;
+          return;
+        }
+
         const proceed = () => {
-          if (!navigator.onLine) {
-            updateConnectivityUI();
+          if (!navigator.onLine && !demoMode) {
+            window.location.href = 'offline/index.html';
             return;
           }
           if (cu && clubKey) launch();
@@ -39,11 +59,11 @@
         };
 
         if (splash) {
-          splash.style.pointerEvents = 'none'; // Ensure it doesn't block clicks immediately
+          splash.style.pointerEvents = 'none';
           splash.style.opacity = '0';
           setTimeout(() => {
             splash.style.display = 'none';
-            splash.remove(); // Safety: completely remove it from the DOM
+            splash.remove();
             proceed();
           }, 500);
         } else {

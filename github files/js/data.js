@@ -200,6 +200,17 @@
       }
     }
 
+    async function dbDelete(path) {
+      try {
+        const ref = getRef(path);
+        await withTimeout(ref.delete());
+        return true;
+      } catch (e) { 
+        console.error('dbDelete error:', e); 
+        return false; 
+      }
+    }
+
     async function dbListen(path, cb) {
       if (path.includes('/messages/')) {
         // Listen to Realtime Database

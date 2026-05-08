@@ -69,39 +69,7 @@
   <div class="toast" id="toast"></div>
   
   <!-- ══════════ OFFLINE SCREEN ══════════ -->
-  <div class="full-screen" id="offline-screen" style="display:none">
-    <div class="offline-card">
-      <div class="offline-brand">
-        <div class="offline-logo">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-            <line x1="12" y1="20" x2="12.01" y2="20"></line>
-          </svg>
-        </div>
-        <div class="offline-title">Pathfinder App</div>
-      </div>
-      <div class="offline-icon">🌐</div>
-      <div class="offline-title">Connection Lost</div>
-      <p class="offline-msg">It looks like you're offline. Please check your internet connection to continue using the
-        app.</p>
-      <div class="offline-steps">
-        <div class="offline-step">
-          <div class="offline-step-num">1</div>
-          <div>Check Wi-Fi or Mobile Data</div>
-        </div>
-        <div class="offline-step">
-          <div class="offline-step-num">2</div>
-          <div>Ensure Airplane Mode is off</div>
-        </div>
-      </div>
-      <button class="retry-btn" onclick="checkConnectionRetry()">
-        Try Again
-      </button>
-    </div>
-  </div>
+
 
 
   <!-- ══════════ SPLASH SCREEN ══════════ -->
@@ -311,9 +279,10 @@
               <textarea class="inp" id="hon-note" placeholder="Any comments about your work..." style="height:80px;resize:none"></textarea>
             </div>
 
-            <div id="hon-photo-preview" style="display:none;margin-bottom:15px">
+            <div id="hon-photo-preview" style="display:none;margin-bottom:15px;text-align:center">
                <div class="ct">PHOTO READY</div>
-               <div id="hon-photo-name" style="font-size:12px;color:var(--a2)"></div>
+               <img id="hon-img-prev" src="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">
+               <div id="hon-photo-name" style="font-size:12px;color:var(--a2);margin-top:5px"></div>
             </div>
 
             <button class="sbtn" style="background:var(--mut);margin-bottom:10px" onclick="requestImageFromApp('honor')">📸 Upload Honor Photos</button>

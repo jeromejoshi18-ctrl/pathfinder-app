@@ -13,22 +13,33 @@
       const inp = document.createElement('input');
       inp.type = 'file';
       inp.accept = 'image/*';
-      if (source === 'camera') inp.setAttribute('capture', 'environment');
+      if (source === 'camera') {
+        inp.setAttribute('capture', 'environment');
+      } else {
+        inp.multiple = true;
+      }
       inp.style.cssText = 'position:fixed;top:-100px;left:-100px;width:1px;height:1px;opacity:0;';
       document.body.appendChild(inp);
 
       inp.addEventListener('change', function handler(e) {
         inp.removeEventListener('change', handler);
         document.body.removeChild(inp);
-        const file = e.target.files && e.target.files[0];
-        if (!file) { pendingUploadType = null; return; }
-        if (!file.type.startsWith('image/')) { toast('⚠️ Please select an image file.'); return; }
-        if (file.size > 10 * 1024 * 1024) { toast('⚠️ Image too large (<10MB).'); return; }
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) { pendingUploadType = null; return; }
+        
+        // Reset storage for these types so we don't keep appending from previous sessions
+        if (type === 'honor' || type === 'honors') window.honorPhotoData = [];
+        if (type === 'requirement' || type === 'requirement') window.requirementPhotoData = [];
 
-        const reader = new FileReader();
-        reader.onload = ev => receiveImageFromApp(ev.target.result, type);
-        reader.onerror = () => toast('⚠️ Could not read image.');
-        reader.readAsDataURL(file);
+        files.forEach(file => {
+          if (!file.type.startsWith('image/')) return;
+          if (file.size > 10 * 1024 * 1024) { toast('⚠️ One image too large (<10MB).'); return; }
+
+          const reader = new FileReader();
+          reader.onload = ev => receiveImageFromApp(ev.target.result, type);
+          reader.onerror = () => toast('⚠️ Could not read image.');
+          reader.readAsDataURL(file);
+        });
       });
 
       setTimeout(() => inp.click(), 50);
@@ -44,27 +55,40 @@
       input.type = 'file';
       input.accept = 'image/*';
       input.capture = 'environment';
+      input.multiple = true; // Allow multiple even from camera if OS supports it
       input.onchange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (re) => {
-          if (type === 'honors') {
-            window.honorPhotoData = re.target.result;
-            if (id('hon-photo-preview')) {
-              id('hon-photo-preview').style.display = 'block';
-              id('hon-img-prev').src = re.target.result;
+        const files = Array.from(e.target.files || []);
+        
+        // Reset storage
+        if (type === 'honors' || type === 'honor') window.honorPhotoData = [];
+        if (type === 'requirement' || type === 'requirement') window.requirementPhotoData = [];
+
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (re) => {
+            if (type === 'honors' || type === 'honor') {
+              if (!Array.isArray(window.honorPhotoData)) window.honorPhotoData = [];
+              window.honorPhotoData.push(re.target.result);
+              const el = id('hon-photo-preview');
+              if (el) {
+                el.style.display = 'block';
+                id('hon-img-prev').src = re.target.result; // Show last one as preview
+                id('hon-photo-name').textContent = `📸 ${window.honorPhotoData.length} images selected!`;
+              }
+            } else if (type === 'requirement') {
+              if (!Array.isArray(window.requirementPhotoData)) window.requirementPhotoData = [];
+              window.requirementPhotoData.push(re.target.result);
+              if (id('req-photo-preview')) {
+                id('req-photo-preview').style.display = 'block';
+                id('req-img-prev').src = re.target.result; // Show last one as preview
+                toast(`📸 ${window.requirementPhotoData.length} images ready!`);
+              }
+            } else {
+              handleFileUploadData(re.target.result, type);
             }
-          } else if (type === 'requirement') {
-            window.requirementPhotoData = re.target.result;
-            if (id('req-photo-preview')) {
-              id('req-photo-preview').style.display = 'block';
-              id('req-img-prev').src = re.target.result;
-            }
-          } else {
-            handleFileUploadData(re.target.result, type);
-          }
-        };
-        reader.readAsDataURL(file);
+          };
+          reader.readAsDataURL(file);
+        });
       };
       input.click();
     };
@@ -79,18 +103,29 @@
 
       if (type === 'devotion') {
         handleDevotionUploadData(data);
-      } else if (type === 'honor') {
-        window.honorPhotoData = data;
+      } else if (type === 'honor' || type === 'honors') {
+        if (!Array.isArray(window.honorPhotoData)) window.honorPhotoData = [];
+        window.honorPhotoData.push(data);
         const el = id('hon-photo-preview');
         if (el) {
           el.style.display = 'block';
-          id('hon-photo-name').textContent = '📸 Image selected and ready!';
+          if (id('hon-img-prev')) id('hon-img-prev').src = data;
+          id('hon-photo-name').textContent = `📸 ${window.honorPhotoData.length} images ready!`;
         }
-        toast('📸 Photo ready to submit!');
+        toast('📸 Photo added!');
+      } else if (type === 'requirement') {
+        if (!Array.isArray(window.requirementPhotoData)) window.requirementPhotoData = [];
+        window.requirementPhotoData.push(data);
+        const el = id('req-photo-preview');
+        if (el) {
+          el.style.display = 'block';
+          if (id('req-img-prev')) id('req-img-prev').src = data;
+        }
+        toast('📸 Photo added!');
       } else {
         handleFileUploadData(data, type);
       }
-      pendingUploadType = null;
+      // Note: We don't null pendingUploadType here because we might be in a loop
     }
 
     async function uploadToCloudinary(base64Data, filename) {

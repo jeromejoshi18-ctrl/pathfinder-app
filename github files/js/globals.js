@@ -73,7 +73,11 @@
     
     let cu = null, clubKey = 'default', curTab = 'home', currentTab = 'home', selRole = null, selClass = null, selDirType = null, selSlot = null;
     let currentAttendance = {}, currentHygiene = {}, currentScores = {}, currentNotes = {};
-    let demoMode = false;
+    
+    // Support starting in demo mode via URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let demoMode = urlParams.get('demo') === 'true';
+    
     let settings = { devot: true, att: true, scores: true, tip: true };
     let navHistory = [];
     let db = null; // initialized in firebase-init.js

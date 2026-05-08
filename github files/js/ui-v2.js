@@ -76,7 +76,6 @@ async function loadStudentHistory(type, targetId) {
   if (!list) return;
   list.innerHTML = '<div style="padding:10px;text-align:center">Loading history...</div>';
 
-  // We confirmed data is in: clubs/clubKey/uploads/type/classId/studentName/history
   const path = `clubs/${clubKey}/uploads/${type}/${cu.classId}/${san(cu.name)}/history`;
   const data = await dbGet(path);
 
@@ -85,24 +84,46 @@ async function loadStudentHistory(type, targetId) {
     return;
   }
 
-  const items = Object.values(data).filter(f => f && typeof f === 'object').sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const items = Object.entries(data)
+    .filter(([fid, f]) => f && typeof f === 'object' && f.url)
+    .map(([fid, f]) => ({ ...f, fid }))
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
   list.innerHTML = items.map(f => `
         <div class="card" style="padding:10px;margin-bottom:8px;background:var(--bg2)">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
               <div style="font-weight:700;font-size:12px">${f.name || type.toUpperCase()}</div>
               <div style="font-size:10px;color:var(--mut)">${f.ts ? new Date(f.ts).toLocaleDateString() : 'Date unknown'}</div>
+              ${f.note ? `<div style="font-size:10px;color:var(--txt);margin-top:4px;font-style:italic">"${f.note}"</div>` : ''}
             </div>
-            <div class="badge ${f.viewedByInstructor ? 'bg' : 'br'}" style="font-size:9px">
-              ${f.viewedByInstructor ? 'Viewed' : 'Sent'}
+            <div style="text-align:right">
+              <div class="badge ${f.viewedByInstructor ? 'bg' : 'br'}" style="font-size:9px;margin-bottom:5px">
+                ${f.viewedByInstructor ? 'Viewed' : 'Sent'}
+              </div>
+              <img src="${f.url}" style="width:50px;height:50px;object-fit:cover;border-radius:4px;display:block;cursor:pointer;background:var(--bg3)" onclick="window.open('${f.url}', '_blank')">
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="sbtn" style="padding:4px 8px;font-size:10px;background:var(--accent)" onclick="window.open('${f.url}', '_blank')">👁️ View Image</button>
+            <button class="sbtn" style="padding:4px 8px;font-size:10px;background:var(--accent);flex:1" onclick="window.open('${f.url}', '_blank')">👁️ View Full</button>
+            <button class="sbtn" style="padding:4px 8px;font-size:10px;background:var(--red);flex:1" onclick="deleteUploadRecord('${type}', '${f.fid}', '${targetId}')">🗑️ Delete</button>
           </div>
         </div>
       `).join('');
 }
+
+async function deleteUploadRecord(type, fid, targetId) {
+  if (!confirm('Are you sure you want to delete this upload?')) return;
+  const path = `clubs/${clubKey}/uploads/${type}/${cu.classId}/${san(cu.name)}/history/${fid}`;
+  const ok = await dbDelete(path);
+  if (ok) {
+    toast('✅ Upload deleted');
+    loadStudentHistory(type, targetId);
+  } else {
+    toast('❌ Delete failed');
+  }
+}
+window.deleteUploadRecord = deleteUploadRecord;
 
 function upTab(tab) {
   ['requirements', 'honors'].forEach(t => {
@@ -119,35 +140,39 @@ function upTab(tab) {
 async function submitRequirementDirect() {
   const name = id('req-name-input').value.trim();
   const note = id('req-note').value.trim();
-  const photo = window.requirementPhotoData;
+  const photos = window.requirementPhotoData; // Now an array
 
   if (!name) { toast('⚠️ Please enter the name of the requirement!'); return; }
-  if (!photo) { toast('⚠️ Please upload a photo of your work first!'); return; }
+  if (!photos || (Array.isArray(photos) && photos.length === 0)) { toast('⚠️ Please upload a photo of your work first!'); return; }
 
-  toast('Submitting requirement...');
-  const url = await uploadToCloudinary(photo, `req_${san(name)}_${Date.now()}`);
-  if (!url) { toast('Upload failed'); return; }
-
-  const obj = {
-    name,
-    note,
-    url,
-    ts: Date.now(),
-    date: today(),
-    by: cu.name,
-    type: 'requirements',
-    status: 'pending'
-  };
-
+  const photoArray = Array.isArray(photos) ? photos : [photos];
+  toast(`Submitting ${photoArray.length} items...`);
+  
   const path = `clubs/${clubKey}/uploads/requirements/${cu.classId}/${san(cu.name)}/history`;
-  await dbPush(path, obj);
+
+  for (const photo of photoArray) {
+    const url = await uploadToCloudinary(photo, `req_${san(name)}_${Date.now()}`);
+    if (!url) continue;
+
+    const obj = {
+      name,
+      note,
+      url,
+      ts: Date.now(),
+      date: today(),
+      by: cu.name,
+      type: 'requirements',
+      status: 'pending'
+    };
+    await dbPush(path, obj);
+  }
 
   window.requirementPhotoData = null;
   id('req-name-input').value = '';
   id('req-note').value = '';
   id('req-photo-preview').style.display = 'none';
 
-  toast('✅ Requirement submitted to instructor!');
+  toast('✅ Submitted to instructor!');
   setTimeout(() => {
     loadStudentHistory('requirements', 'req-history-list');
   }, 1000);
@@ -156,35 +181,39 @@ async function submitRequirementDirect() {
 async function submitHonorDirect() {
   const name = id('hon-name-input').value.trim();
   const note = id('hon-note').value.trim();
-  const photo = window.honorPhotoData;
+  const photos = window.honorPhotoData; // Now an array
 
   if (!name) { toast('⚠️ Please enter the name of the honor!'); return; }
-  if (!photo) { toast('⚠️ Please upload a photo of your work first!'); return; }
+  if (!photos || (Array.isArray(photos) && photos.length === 0)) { toast('⚠️ Please upload a photo of your work first!'); return; }
 
-  toast('Submitting honor...');
-  const url = await uploadToCloudinary(photo, `honor_${san(name)}_${Date.now()}`);
-  if (!url) { toast('Upload failed'); return; }
-
-  const obj = {
-    name,
-    note,
-    url,
-    ts: Date.now(),
-    date: today(),
-    by: cu.name,
-    type: 'honors',
-    status: 'pending'
-  };
-
+  const photoArray = Array.isArray(photos) ? photos : [photos];
+  toast(`Submitting ${photoArray.length} items...`);
+  
   const path = `clubs/${clubKey}/uploads/honors/${cu.classId}/${san(cu.name)}/history`;
-  await dbPush(path, obj);
+
+  for (const photo of photoArray) {
+    const url = await uploadToCloudinary(photo, `honor_${san(name)}_${Date.now()}`);
+    if (!url) continue;
+
+    const obj = {
+      name,
+      note,
+      url,
+      ts: Date.now(),
+      date: today(),
+      by: cu.name,
+      type: 'honors',
+      status: 'pending'
+    };
+    await dbPush(path, obj);
+  }
 
   window.honorPhotoData = null;
   id('hon-name-input').value = '';
   id('hon-note').value = '';
   id('hon-photo-preview').style.display = 'none';
 
-  toast('✅ Honor submitted to instructor!');
+  toast('✅ Submitted to instructor!');
   setTimeout(() => {
     loadStudentHistory('honors', 'hon-history-list');
   }, 1000);
