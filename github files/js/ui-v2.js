@@ -29,6 +29,14 @@ function swTab(tab, addHistory = true) {
   if (tab === 'students') buildStuView();
 }
 
+function getLastSaturday() {
+  const d = new Date();
+  const day = d.getDay(); // 0 (Sun) to 6 (Sat)
+  const diff = (day + 1) % 7; // distance to last Saturday
+  d.setDate(d.getDate() - diff);
+  return d.toISOString().split('T')[0];
+}
+
 function subTab(parent, tab, addHistory = true) {
   if (addHistory) {
     navHistory.push('sub:' + parent + ':' + (window.lastSubTab || ''));
@@ -47,6 +55,17 @@ function subTab(parent, tab, addHistory = true) {
     const onclick = t.getAttribute('onclick') || '';
     t.classList.toggle('a', onclick.includes(`'${tab}'`));
   });
+
+  // Specific initializations
+  if (parent === 'instructors' && tab === 'attendance') {
+    if (!id('att-date-input').value) {
+      id('att-date-input').value = getLastSaturday();
+    }
+    // If a student was already selected, refresh history
+    if (attSelectedStudent) {
+      loadStudentAttendance(id('att-stu-sel').value);
+    }
+  }
 }
 
 async function initDevotionTab() {
@@ -54,21 +73,117 @@ async function initDevotionTab() {
   id('dev-student-view').style.display = isStudent ? 'block' : 'none';
   id('dev-instructor-view').style.display = !isStudent ? 'block' : 'none';
 
-  if (isStudent) {
-    id('dev-today-verse').textContent = "I can do all things through Christ who strengthens me.";
-    id('dev-today-ref').textContent = "Philippians 4:13";
-
-    // Check if already uploaded today
-    const status = await dbGet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`);
-    const el = id('dev-student-status');
-    if (el) {
-      el.innerHTML = status
-        ? `<div style="display:flex;align-items:center;gap:10px;color:var(--a2)"><span style="font-size:20px">✅</span><div><strong>Journal Submitted</strong><br><span style="font-size:11px;opacity:.8">Well done! Your instructor will review it soon.</span></div></div>`
-        : `<div style="display:flex;align-items:center;gap:10px;color:var(--amb)"><span style="font-size:20px">📓</span><div><strong>Not Submitted</strong><br><span style="font-size:11px;opacity:.8">Upload your journal entry for today.</span></div></div>`;
-    }
-  } else {
-    // Instructor logic for devotion...
+  if (!isStudent) {
+    if (!id('dev-post-date').value) id('dev-post-date').value = today();
   }
+  
+  loadDevotionHistory();
+}
+
+async function loadDevotionHistory() {
+  const isStudent = cu.role === 'student';
+  const targetId = isStudent ? 'dev-posts-list' : 'dev-inst-history-list';
+  const list = id(targetId);
+  if (!list) return;
+
+  const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}`) || {};
+  const sortedPosts = Object.entries(posts).sort((a, b) => b[1].ts - a[1].ts);
+
+  if (sortedPosts.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">No devotion posts yet.</div>';
+    return;
+  }
+
+  if (isStudent) {
+    // For students, check journals for each post
+    const journals = await dbGet(`clubs/${clubKey}/devotionJournals/${cu.classId}`) || {};
+    
+    list.innerHTML = sortedPosts.map(([pid, p]) => {
+      const myJournal = (journals[pid] && journals[pid][san(cu.name)]) ? journals[pid][san(cu.name)] : null;
+      return `
+        <div class="card" style="margin-bottom:12px;padding:15px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:11px;color:var(--a2);font-weight:800">${new Date(p.tm).toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'})}</div>
+            <div style="font-size:11px;color:var(--mut)">Posted by ${p.s}</div>
+          </div>
+          <div style="font-size:15px;line-height:1.5;margin-bottom:12px">${p.t}</div>
+          
+          <div id="dev-status-${pid}">
+            ${myJournal 
+              ? `<div style="display:flex;align-items:center;gap:10px;color:var(--a2);background:rgba(5,150,105,.1);padding:10px;border-radius:8px">
+                  <span style="font-size:18px">✅</span>
+                  <div style="font-size:12px;flex:1"><strong>Journal Submitted</strong></div>
+                  <img src="${myJournal.url}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="window.open('${myJournal.url}','_blank')">
+                  <button class="sbtn" style="width:auto;padding:4px 8px;font-size:10px;background:var(--amb)" onclick="openDevotionUpload('${pid}')">Update</button>
+                 </div>`
+              : `<button class="sbtn" style="background:var(--accent)" onclick="openDevotionUpload('${pid}')">📓 Upload Journal</button>`
+            }
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    // For instructors
+    list.innerHTML = sortedPosts.map(([pid, p]) => `
+      <div class="card" style="margin-bottom:10px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;font-weight:700">${new Date(p.tm).toLocaleDateString()}</div>
+          <div style="font-size:11px;color:var(--mut);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.t}</div>
+        </div>
+        <button class="sbtn" style="width:auto;padding:6px 12px;font-size:11px" onclick="viewPostJournals('${pid}', '${p.tm}')">View Journals 👁️</button>
+      </div>
+    `).join('');
+  }
+}
+
+async function viewPostJournals(pid, dateStr) {
+  const dash = id('dev-journal-dash');
+  const list = id('dev-journal-list');
+  id('dev-dash-date').textContent = new Date(dateStr).toLocaleDateString();
+  dash.style.display = 'block';
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading journals...</div>';
+
+  const journals = await dbGet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${pid}`) || {};
+  const entries = Object.values(journals);
+
+  if (entries.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">No journals submitted yet.</div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(j => `
+    <div class="card" style="margin-bottom:8px;padding:10px;display:flex;align-items:center;gap:12px">
+      <div class="av">${ini(j.name)}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${j.name}</div>
+        <div style="font-size:11px;color:var(--mut)">${j.note || 'No note'}</div>
+      </div>
+      <img src="${j.url}" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="window.open('${j.url}','_blank')">
+    </div>
+  `).join('');
+  
+  dash.scrollIntoView({ behavior: 'smooth' });
+}
+
+window.currentDevotionPostId = null;
+function openDevotionUpload(pid) {
+  window.currentDevotionPostId = pid;
+  requestImageFromApp('devotion');
+}
+
+function handleGalleryUpload(input, type) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (!file.type.startsWith('image/')) { toast('⚠️ Please select an image file'); return; }
+  
+  toast('Reading image...');
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (window.receiveImageFromApp) {
+      window.receiveImageFromApp(e.target.result, type);
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 async function loadStudentHistory(type, targetId) {
@@ -76,7 +191,8 @@ async function loadStudentHistory(type, targetId) {
   if (!list) return;
   list.innerHTML = '<div style="padding:10px;text-align:center">Loading history...</div>';
 
-  const path = `clubs/${clubKey}/uploads/${type}/${cu.classId}/${san(cu.name)}/history`;
+  const cat = type.endsWith('s') ? type : type + 's';
+  const path = `clubs/${clubKey}/uploads/${cat}/${cu.classId}/${san(cu.name)}/history`;
   const data = await dbGet(path);
 
   if (!data || Object.keys(data).length === 0) {
@@ -114,7 +230,8 @@ async function loadStudentHistory(type, targetId) {
 
 async function deleteUploadRecord(type, fid, targetId) {
   if (!confirm('Are you sure you want to delete this upload?')) return;
-  const path = `clubs/${clubKey}/uploads/${type}/${cu.classId}/${san(cu.name)}/history/${fid}`;
+  const cat = type.endsWith('s') ? type : type + 's';
+  const path = `clubs/${clubKey}/uploads/${cat}/${cu.classId}/${san(cu.name)}/history/${fid}`;
   const ok = await dbDelete(path);
   if (ok) {
     toast('✅ Upload deleted');
@@ -521,62 +638,12 @@ async function buildStudents() {
     });
   }
   buildAssDDs();
-  const stu = classStudents;
-  if (stu.length === 0) {
-    const emptyMsg = `<div style="text-align:center;padding:24px;color:var(--mut);font-size:14px">No students in your class yet.<br>Students need to create an account to appear here.</div>`;
-    if (id('att-list')) id('att-list').innerHTML = emptyMsg;
-    return;
-  }
-
-  // Fetch today's attendance to "light up" the buttons
-  const attDoc = await dbGet(`clubs/${clubKey}/attendance/${cu.classId}`) || {};
-  const savedAtt = attDoc[today()] || {};
-
-  // Sync currentAttendance with saved data if locked
-  if (attLocked) {
-    currentAttendance = {};
-    Object.values(savedAtt).forEach(entry => {
-      if (entry.name && entry.status) currentAttendance[entry.name] = entry.status;
-    });
-  }
-
-  const btnBase = 'padding:6px 9px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1.5px solid;transition:all .15s;';
-
-  const attList = id('att-list');
-  if (attList) {
-    attList.innerHTML = stu.map((s, i) => {
-      const status = currentAttendance[s] || '';
-      const getStyle = (type) => {
-        const isMarked = status === type;
-        const config = isMarked ? ATT_COLORS[type] : ATT_DEFAULT[type];
-        const lockStyle = attLocked ? (isMarked ? 'opacity:1;cursor:default;pointer-events:none' : 'opacity:0.3;cursor:default;pointer-events:none') : '';
-        return `${btnBase}background:${config.bg};color:${config.color};border-color:${config.border};${lockStyle}`;
-      };
-
-      return `
-            <div class="srow" id="ar${i}">
-              <div class="av">${ini(s)}</div>
-              <div class="si"><div class="sn">${s}</div><div class="sm2">${cu.cn || ''}</div></div>
-              <div style="display:flex;gap:5px">
-                <button id="ar${i}-p" style="${getStyle('p')}" onclick="markA(${i},'p')">P</button>
-                <button id="ar${i}-l" style="${getStyle('l')}" onclick="markA(${i},'l')">L</button>
-                <button id="ar${i}-ab2" style="${getStyle('ab2')}" onclick="markA(${i},'ab2')">A</button>
-              </div>
-            </div>
-          `;
-    }).join('');
-  }
-
-  // Show/hide update buttons
-  if (id('att-update-btn')) id('att-update-btn').style.display = attLocked ? 'block' : 'none';
-  if (id('att-save-btn')) id('att-save-btn').style.display = attLocked ? 'none' : 'block';
-  if (id('att-saved-banner')) id('att-saved-banner').style.display = (attLocked && Object.keys(savedAtt).length > 0) ? 'block' : 'none';
 }
 // Attendance button colors
 const ATT_COLORS = {
-  p: { bg: '#059669', color: '#fff', border: '#059669' },
-  l: { bg: '#d97706', color: '#fff', border: '#d97706' },
-  ab2: { bg: '#dc2626', color: '#fff', border: '#dc2626' },
+  p: { bg: '#059669', color: '#fff', border: '#059669', label: 'Present' },
+  l: { bg: '#d97706', color: '#fff', border: '#d97706', label: 'Late' },
+  ab2: { bg: '#dc2626', color: '#fff', border: '#dc2626', label: 'Absent' },
 };
 const ATT_DEFAULT = {
   p: { bg: 'transparent', color: '#059669', border: '#059669' },
@@ -591,28 +658,148 @@ function applyBtnStyle(el, c) {
   el.style.borderColor = c.border;
 }
 
-function markA(i, s) {
-  const name = classStudents[i];
-  currentAttendance[name] = s;
-  // Reset all 3 buttons for this row
-  ['p', 'l', 'ab2'].forEach(k => {
-    applyBtnStyle(id('ar' + i + '-' + k), ATT_DEFAULT[k]);
-  });
-  // Highlight selected
-  applyBtnStyle(id('ar' + i + '-' + s), ATT_COLORS[s]);
+// Global state for instructor attendance management
+let attSelectedStudent = null;
+let attClassRecords = {};
+let attLocked = true;
+
+async function loadStudentAttendance(stuIdx) {
+  if (stuIdx === "" || stuIdx === "all") {
+    id('att-marking-card').style.display = 'none';
+    attSelectedStudent = null;
+    return;
+  }
+  
+  const studentName = classStudents[parseInt(stuIdx)];
+  if (!studentName) return;
+  
+  attSelectedStudent = studentName;
+  id('att-marking-card').style.display = 'block';
+  id('att-history-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading history...</div>';
+  
+  // Set default date to today if not set
+  if (!id('att-date-input').value) {
+    id('att-date-input').value = today();
+  }
+
+  // Fetch ALL attendance for this class
+  attClassRecords = await dbGet(`clubs/${clubKey}/attendance/${cu.classId}`) || {};
+  
+  renderStudentHistory();
+  syncAttStatus();
 }
 
-async function saveAtt() {
-  if (Object.keys(currentAttendance).length === 0) { toast('⚠️ No attendance marked'); return; }
-  toast('Saving attendance...');
-  const data = {};
-  Object.entries(currentAttendance).forEach(([name, status]) => {
-    data[san(name)] = { name, status, ts: Date.now() };
+function renderStudentHistory() {
+  const historyList = id('att-history-list');
+  const statsSummary = id('att-stats-summary');
+  if (!historyList || !statsSummary || !attSelectedStudent) return;
+
+  const records = [];
+  let p = 0, l = 0, a = 0;
+  attLocked = true; // Reset lock state when rendering history
+
+
+  // Iterate through dates and extract this student's records
+  Object.entries(attClassRecords).sort((a, b) => b[0].localeCompare(a[0])).forEach(([date, dayData]) => {
+    const entry = dayData[san(attSelectedStudent)];
+    if (entry && entry.status) {
+      records.push({ date, status: entry.status });
+      if (entry.status === 'p') p++;
+      else if (entry.status === 'l') l++;
+      else if (entry.status === 'ab2') a++;
+    }
   });
-  await dbSet(`clubs/${clubKey}/attendance/${cu.classId}`, { [today()]: data });
-  toast('✅ Attendance saved!');
-  attLocked = true;
-  buildStudents();
+
+  if (records.length === 0) {
+    historyList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px">No attendance records found for this student.</div>';
+  } else {
+    historyList.innerHTML = records.map(r => {
+      const config = ATT_COLORS[r.status] || {label: 'Unknown', bg: 'var(--mut)'};
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--bg3)">
+          <div style="font-size:13px; font-weight:700">${new Date(r.date).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})}</div>
+          <div style="background:${config.bg}; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:800">${config.label.toUpperCase()}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  statsSummary.innerHTML = `
+    <div style="text-align:center"><div style="font-size:18px; font-weight:800; color:var(--a2)">${p}</div><div style="font-size:10px; color:var(--mut)">Present</div></div>
+    <div style="text-align:center"><div style="font-size:18px; font-weight:800; color:var(--amb)">${l}</div><div style="font-size:10px; color:var(--mut)">Late</div></div>
+    <div style="text-align:center"><div style="font-size:18px; font-weight:800; color:var(--red)">${a}</div><div style="font-size:10px; color:var(--mut)">Absent</div></div>
+  `;
+}
+
+function syncAttStatus() {
+  const date = id('att-date-input').value;
+  if (!date || !attSelectedStudent) return;
+
+  const dayData = attClassRecords[date] || {};
+  const entry = dayData[san(attSelectedStudent)];
+  const status = entry ? entry.status : null;
+
+  // Determine if we should be locked (if a record exists and we haven't clicked update)
+  const recordExists = !!entry;
+  const isLocked = recordExists && attLocked;
+
+  // Show/Hide Lock UI
+  if (id('att-update-btn')) id('att-update-btn').style.display = isLocked ? 'block' : 'none';
+  if (id('att-saved-banner')) id('att-saved-banner').style.display = isLocked ? 'block' : 'none';
+
+  ['p', 'l', 'ab2'].forEach(s => {
+    const btn = id('btn-att-' + s);
+    if (!btn) return;
+    
+    // Styling
+    if (status === s) {
+      btn.style.opacity = '1';
+      btn.style.border = '2px solid #fff';
+      btn.style.boxShadow = '0 0 5px rgba(0,0,0,0.2)';
+    } else {
+      btn.style.opacity = isLocked ? '0.2' : '0.5';
+      btn.style.border = 'none';
+      btn.style.boxShadow = 'none';
+    }
+    
+    // Interactivity
+    btn.style.pointerEvents = isLocked ? 'none' : 'auto';
+  });
+}
+
+function unlockAtt() {
+  attLocked = false;
+  syncAttStatus();
+  toast('🔓 Attendance unlocked for editing');
+}
+
+async function markIndivAtt(status) {
+  const date = id('att-date-input').value;
+  if (!date) { toast('⚠️ Please select a date first'); return; }
+  if (!attSelectedStudent) { toast('⚠️ Please select a student first'); return; }
+  if (attLocked && attClassRecords[date] && attClassRecords[date][san(attSelectedStudent)]) return;
+
+  toast('Saving...');
+  const entry = {
+    name: attSelectedStudent,
+    status: status,
+    ts: Date.now()
+  };
+
+  // Optimistic UI update
+  if (!attClassRecords[date]) attClassRecords[date] = {};
+  attClassRecords[date][san(attSelectedStudent)] = entry;
+  
+  const ok = await dbSet(`clubs/${clubKey}/attendance/${cu.classId}`, { [date]: attClassRecords[date] });
+  if (ok) {
+    toast('✅ Attendance saved');
+    attLocked = true; // Re-lock after saving
+    renderStudentHistory();
+    syncAttStatus();
+    buildStuView(); // Sync student dashboard if they are logged in
+  } else {
+    toast('❌ Failed to save');
+  }
 }
 
 async function saveSc() {
@@ -639,11 +826,7 @@ async function saveSc() {
   buildStuView(); // Live sync for student dashboard
 }
 
-function unlockAtt() {
-  attLocked = false;
-  buildStudents();
-  toast('🔓 Attendance unlocked for editing');
-}
+
 function unlockSc() {
   const i = id('sc-sel').value;
   if (i === 'all') {
@@ -673,14 +856,23 @@ function syncScoreUI() {
 // ═══════════════════════════════════════════════════
 function buildAssDDs() {
   const stu = getStu();
-  const ids = ['sc-sel', 'req-stu-sel', 'uploads-stu-sel'];
+  const ids = ['sc-sel', 'req-stu-sel', 'uploads-stu-sel', 'att-stu-sel'];
   if (stu.length === 0) {
     const empty = '<option value="all">No students yet</option>';
     ids.forEach(x => { const el = id(x); if (el) el.innerHTML = empty; });
     return;
   }
   const opts = `<option value="all">All Students</option>` + stu.map((s, i) => `<option value="${i}">${s}</option>`).join('');
-  ids.forEach(x => { const el = id(x); if (el) el.innerHTML = opts; });
+  ids.forEach(x => {
+    const el = id(x);
+    if (el) {
+      if (x === 'att-stu-sel' || x === 'sc-sel') {
+        el.innerHTML = `<option value="">Choose a student...</option>` + stu.map((s, i) => `<option value="${i}">${s}</option>`).join('');
+      } else {
+        el.innerHTML = opts;
+      }
+    }
+  });
   scLocked = true;
   syncScoreUI();
 }
@@ -760,6 +952,7 @@ async function buildMGCands() {
 function mgTab(tab) {
   ['curriculum', 'candidates', 'portfolio'].forEach(t => id('mg-' + t).style.display = t === tab ? 'block' : 'none');
   document.querySelectorAll('#tab-masterguide > .tabs .tab').forEach((t, i) => t.classList.toggle('a', ['curriculum', 'candidates', 'portfolio'][i] === tab));
+  if (tab === 'portfolio') loadStudentHistory('mgport', 'mgp-files');
 }
 
 // ═══════════════════════════════════════════════════
@@ -767,12 +960,16 @@ function mgTab(tab) {
 // ═══════════════════════════════════════════════════
 async function postDevotion() {
   const txt = id('dev-post-ta').value.trim();
-  if (!txt) return;
+  const date = id('dev-post-date').value;
+  if (!txt) { toast('⚠️ Please type a devotion message'); return; }
+  if (!date) { toast('⚠️ Please select a date'); return; }
+
   toast('Posting devotion...');
-  const obj = { s: cu.name, t: txt, ts: Date.now(), tm: today() };
+  const obj = { s: cu.name, t: txt, ts: Date.now(), tm: date };
   await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}`, obj);
   id('dev-post-ta').value = '';
   toast('✅ Devotion posted to class!');
+  loadDevotionHistory();
 }
 
 // ═══════════════════════════════════════════════════
@@ -803,7 +1000,7 @@ async function loadInstUploads(type, stuIdx) {
     return;
   }
 
-  const catsToCheck = type === 'all' ? ['requirements', 'honors'] : [type];
+  const catsToCheck = type === 'all' ? ['requirements', 'honors', 'mgport', 'journals'] : [type];
   const cls = cu.classId;
 
   for (const student of targetStudents) {
@@ -825,17 +1022,21 @@ async function loadInstUploads(type, stuIdx) {
         const viewed = f.viewedByInstructor ? '<span style="color:var(--a2);font-weight:700">● Viewed</span>' : '<span style="color:var(--amb);font-weight:700">● New</span>';
 
         html += `
-              <div class="card" style="margin-bottom:10px;padding:12px" onclick="markViewed('${cat}','${cls}','${student.sanName}','${fid}');window.open('${f.url}','_blank')">
+              <div class="card" style="margin-bottom:10px;padding:12px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
                   <div>
                     <div style="font-size:14px;font-weight:700;color:var(--txt)">${student.name}</div>
                     <div style="font-size:11px;color:var(--mut)">${cat.toUpperCase()} — ${dateStr}</div>
                   </div>
-                  <div style="font-size:11px">${viewed}</div>
+                  <div style="font-size:11px" onclick="markViewed('${cat}','${cls}','${student.sanName}','${fid}')">${viewed}</div>
                 </div>
-                <img src="${f.url}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:#f0f0f0">
+                <img src="${f.url}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:#f0f0f0;cursor:pointer" onclick="markViewed('${cat}','${cls}','${student.sanName}','${fid}');window.open('${f.url}','_blank')">
                 ${f.name ? `<div style="font-size:12px;font-weight:700;margin-top:8px">${f.name}</div>` : ''}
                 ${f.note ? `<div style="font-size:11px;color:var(--mut);margin-top:4px;font-style:italic">Note: ${f.note}</div>` : ''}
+                
+                <div style="display:flex;gap:8px;margin-top:12px">
+                  <button class="sbtn" style="padding:6px;font-size:11px;background:var(--accent);flex:1" onclick="markViewed('${cat}','${cls}','${student.sanName}','${fid}');window.open('${f.url}','_blank')">👁️ View Full Image</button>
+                </div>
               </div>
             `;
       });
@@ -844,6 +1045,19 @@ async function loadInstUploads(type, stuIdx) {
 
   list.innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--mut)">No matching uploads found.</div>';
 }
+
+async function instDeleteUpload(cat, clsId, stuName, fid) {
+  if (!confirm('Are you sure you want to delete this submission?')) return;
+  const path = `clubs/${clubKey}/uploads/${cat}/${clsId}/${stuName}/history/${fid}`;
+  const ok = await dbDelete(path);
+  if (ok) {
+    toast('✅ Submission deleted');
+    loadInstUploads(instCurrentUploadTab, id('uploads-stu-sel').value);
+  } else {
+    toast('❌ Delete failed');
+  }
+}
+window.instDeleteUpload = instDeleteUpload;
 
 async function markViewed(cat, clsId, stuName, fid) {
   const path = `clubs/${clubKey}/uploads/${cat}/${clsId}/${stuName}/history/${fid}`;

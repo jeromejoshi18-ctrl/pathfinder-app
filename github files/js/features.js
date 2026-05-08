@@ -205,25 +205,31 @@
 
       toast('✅ File uploaded successfully!');
       
-      // Small delay to let Firestore index the new document
-      setTimeout(() => {
-        if (type === 'requirements' && typeof loadStudentHistory === 'function') {
-          loadStudentHistory('requirements', 'req-history-list');
-        }
-        if (window.buildStuView) window.buildStuView();
-      }, 1000);
+    // Small delay to let Firestore index the new document
+    setTimeout(() => {
+      if (type === 'requirements' && typeof loadStudentHistory === 'function') {
+        loadStudentHistory('requirements', 'req-history-list');
+      }
+      if (type === 'mgport' && typeof loadStudentHistory === 'function') {
+        loadStudentHistory('mgport', 'mgp-files');
+      }
+      if (window.buildStuView) window.buildStuView();
+    }, 1000);
     }
 
     async function handleDevotionUploadData(base64) {
       if (!cu) return;
+      const pid = window.currentDevotionPostId;
+      if (!pid) { toast('⚠️ Please select a post to upload your journal to.'); return; }
+
       toast('Uploading Devotion...');
       const url = await uploadToCloudinary(base64, `devotion_${san(cu.name)}_${Date.now()}`);
       if (!url) { toast('Upload failed'); return; }
 
-      const obj = { url, ts: Date.now(), date: today(), uploaded: true };
-      await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${today()}/${san(cu.name)}`, obj);
+      const obj = { url, ts: Date.now(), name: cu.name, uploaded: true };
+      await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${pid}/${san(cu.name)}`, obj);
       toast('📖 Devotion submitted!');
-      if (window.buildStuView) window.buildStuView();
+      if (window.loadDevotionHistory) window.loadDevotionHistory();
     }
 
     // ═══════════════════════════════════════════════════

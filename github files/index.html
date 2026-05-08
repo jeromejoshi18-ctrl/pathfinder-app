@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <title>Pathfinder App v6.5.1</title>
+  <title>Pathfinder App v6.6.1</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -150,7 +150,9 @@
       <!-- CREATE ACCOUNT -->
       <div id="form-su" style="display:none">
         <label class="lbl">Pathfinder Club Name</label>
-        <input class="inp" id="su-club" placeholder="e.g. Nairobi Central Pathfinder Club">
+        <select class="inp" id="su-club">
+          <option value="Oasis Pathfinder Club">Oasis Pathfinder Club</option>
+        </select>
         <label class="lbl">Full Name</label><input class="inp" id="su-name" placeholder="e.g. Samuel Kimani">
         <label class="lbl">Email</label><input class="inp" id="su-email" type="email" placeholder="your@email.com">
         <label class="lbl">Password <span style="font-weight:400;color:var(--mut)">(min 6 chars)</span></label>
