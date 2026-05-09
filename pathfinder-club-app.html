@@ -320,7 +320,7 @@
 
             <div style="display:flex;gap:10px;margin-bottom:10px">
               <button class="sbtn" style="flex:1;background:var(--mut)" onclick="requestImageFromApp('honor')">📸 Take Photo</button>
-              <button class="sbtn" style="flex:1;background:var(--bg3);color:var(--txt)" onclick="id('gallery-input-honor').click()">🖼️ Gallery</button>
+              <button class="sbtn" style="flex:1;background:var(--bg3);color:var(--txt)" onclick="document.getElementById('gallery-input-honor').click()">🖼️ Gallery</button>
             </div>
             <input type="file" id="gallery-input-honor" style="display:none" accept="image/*" onchange="handleGalleryUpload(this, 'honor')">
             <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6)" onclick="submitHonorDirect()">📤 Submit Honor to Instructor</button>
@@ -362,7 +362,7 @@
 
               <div style="display:flex;gap:10px;margin-bottom:10px">
                 <button class="sbtn" style="flex:1;background:var(--mut)" onclick="triggerPhoto('requirement')">📸 Take Photo</button>
-                <button class="sbtn" style="flex:1;background:var(--bg3);color:var(--txt)" onclick="id('gallery-input-requirement').click()">🖼️ Gallery</button>
+                <button class="sbtn" style="flex:1;background:var(--bg3);color:var(--txt)" onclick="document.getElementById('gallery-input-requirement').click()">🖼️ Gallery</button>
               </div>
               <input type="file" id="gallery-input-requirement" style="display:none" accept="image/*" onchange="handleGalleryUpload(this, 'requirement')">
               <button class="sbtn" style="background:linear-gradient(135deg,var(--accent),#3b82f6)" onclick="submitRequirementDirect()">📤 Submit Requirement</button>
@@ -524,7 +524,7 @@
         <div id="dev-journal-dash" style="display:none;margin-top:20px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
             <div class="ct" style="margin-bottom:0">JOURNALS FOR: <span id="dev-dash-date"></span></div>
-            <button class="sbtn" style="width:auto;padding:4px 10px;font-size:11px" onclick="id('dev-journal-dash').style.display='none'">✕ Close</button>
+            <button class="sbtn" style="width:auto;padding:4px 10px;font-size:11px" onclick="closeJournalDash()">✕ Close</button>
           </div>
           <div id="dev-journal-list"></div>
         </div>
