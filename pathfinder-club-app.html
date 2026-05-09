@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <title>Pathfinder App v6.6.1</title>
+  <title>Pathfinder App v6.6.5</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -381,8 +381,8 @@
       <div class="sh">Instructor Panel</div>
       <div class="tabs">
         <div class="tab a" onclick="subTab('instructors','attendance')">✅ Attend.</div>
-        <div class="tab" onclick="subTab('instructors','assessment')">📋 Assess.</div>
-        <div class="tab" onclick="subTab('instructors','stuuploads')">📤 Uploads</div>
+        <div class="tab" onclick="subTab('instructors','assessment')">📋 Scoring</div>
+        <div class="tab" onclick="subTab('instructors','stuuploads')">📤 All Uploads</div>
       </div>
       <div id="sub-instructors-attendance">
         <!-- Student & Date Selection -->
@@ -395,7 +395,6 @@
           <label class="lbl">Select Date</label>
           <input type="date" class="inp" id="att-date-input" onchange="syncAttStatus()">
         </div>
-
         <!-- Marking Card (Shows only when student selected) -->
         <div id="att-marking-card" style="display:none" class="card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -427,40 +426,51 @@
         </div>
       </div>
       <div id="sub-instructors-assessment" style="display:none">
-        <div id="ass-scoring">
-          <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-            <span>SCORING — out of 5</span>
-            <span style="font-size:10px;color:var(--a2);font-weight:700">● LIVE</span>
-          </div>
-          <select class="inp" id="sc-sel" style="margin-bottom:12px" onchange="loadExistingScores(this.value)"></select>
-          <div class="card">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-              <div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Punctuality /
-                On-time</div>
-              <div class="starr" id="st-p"></div>
-              <div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-p">0/5</div>
+        <div class="tabs" style="margin-top:10px; background:var(--bg3); border-radius:12px; padding:4px">
+          <div class="tab a" id="score-tab-req" onclick="setScoreCat('requirements', this)" style="flex:1; font-size:11px">📓 Req. Book</div>
+          <div class="tab" id="score-tab-hon" onclick="setScoreCat('honors', this)" style="flex:1; font-size:11px">🏅 Honors</div>
+        </div>
+
+        <div class="card" style="margin-top:15px; padding:12px">
+          <label class="lbl">Select Student to Grade</label>
+          <select class="inp" id="score-stu-sel" onchange="loadStudentWorkToScore(this.value)">
+            <option value="">Choose a student...</option>
+          </select>
+        </div>
+
+        <div id="score-work-list" style="margin-top:15px">
+          <div style="text-align:center;padding:40px;color:var(--mut)">Select a student to see their work</div>
+        </div>
+
+        <!-- Evaluation Modal/Card (Shown when grading specific item) -->
+        <div id="eval-card" class="modal" style="display:none">
+          <div class="modal-content" style="max-width:400px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+               <div class="sh" style="margin:0">Evaluate Work</div>
+               <div onclick="id('eval-card').style.display='none'" style="cursor:pointer;font-size:20px">✕</div>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-              <div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Neatness /
-                Presentation</div>
-              <div class="starr" id="st-n"></div>
-              <div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-n">0/5</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="font-size:12px;color:var(--mut);width:120px;flex-shrink:0;line-height:1.3">Subject Clarity
+            
+            <img id="eval-img" src="" style="width:100%; height:200px; object-fit:contain; background:#000; border-radius:8px; margin-bottom:15px">
+            
+            <div class="card" style="padding:15px; margin-bottom:15px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px">
+                <div style="font-size:12px;color:var(--mut);width:100px;flex-shrink:0">✨ Neatness</div>
+                <div class="stars-eval" id="stars-n">
+                   <span data-val="1" onclick="setEvalSc('n',1)">★</span><span data-val="2" onclick="setEvalSc('n',2)">★</span><span data-val="3" onclick="setEvalSc('n',3)">★</span><span data-val="4" onclick="setEvalSc('n',4)">★</span><span data-val="5" onclick="setEvalSc('n',5)">★</span>
+                </div>
+                <div style="font-size:12px;color:var(--mut);min-width:26px" id="eval-sv-n">0/5</div>
               </div>
-              <div class="starr" id="st-c"></div>
-              <div style="font-size:12px;color:var(--mut);min-width:26px" id="sv-c">0/5</div>
+
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="font-size:12px;color:var(--mut);width:100px;flex-shrink:0">📝 Clarity</div>
+                <div class="stars-eval" id="stars-c">
+                   <span data-val="1" onclick="setEvalSc('c',1)">★</span><span data-val="2" onclick="setEvalSc('c',2)">★</span><span data-val="3" onclick="setEvalSc('c',3)">★</span><span data-val="4" onclick="setEvalSc('c',4)">★</span><span data-val="5" onclick="setEvalSc('c',5)">★</span>
+                </div>
+                <div style="font-size:12px;color:var(--mut);min-width:26px" id="eval-sv-c">0/5</div>
+              </div>
             </div>
-          </div>
-          <div id="sc-saved-banner"
-            style="display:none;background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--a2);margin-bottom:8px">
-            ✅ Scores saved. Tap Update to edit.</div>
-          <div style="display:flex;gap:8px">
-            <button class="sbtn" onclick="saveSc()" id="sc-save-btn" style="flex:1">💾 Save Scores</button>
-            <button onclick="unlockSc()" id="sc-update-btn"
-              style="display:none;flex:1;background:var(--amb);border:none;border-radius:10px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer">✏️
-              Update</button>
+
+            <button class="sbtn" style="background:var(--accent)" onclick="saveEvaluation()">Save Grade ✅</button>
           </div>
         </div>
       </div>
@@ -631,13 +641,6 @@
         </div>
         <div class="set-row">
           <div>
-            <div class="set-label">Score Updates</div>
-            <div class="set-sub">Notify when instructor posts new scores</div>
-          </div>
-          <button class="toggle on" id="tog-scores" onclick="toggleSetting('scores')"></button>
-        </div>
-        <div class="set-row">
-          <div>
             <div class="set-label">AI Daily Tip on Home</div>
             <div class="set-sub">Smart tips based on your class level</div>
           </div>
@@ -670,24 +673,9 @@
         <div class="set-row" id="update-row" style="cursor:pointer" onclick="checkForUpdates()">
           <div>
             <div class="set-label">App Version</div>
-            <div class="set-sub" id="update-sub">PathfinderApp v6.6.1 — Tap to check for updates</div>
+            <div class="set-sub" id="update-sub">PathfinderApp v6.6.5 — Tap to check for updates</div>
           </div>
-          <div class="badge bb" id="update-badge">v6.6.1</div>
-        </div>
-        <div class="set-row" style="cursor:pointer"
-          onclick="checkConnections().then(r=>toast('Firebase: '+(r.fbOk?'✅':'❌')+' · Cloudinary: '+(r.cldOk?'✅':'❌')))">
-          <div>
-            <div class="set-label">🔌 Test Connections</div>
-            <div class="set-sub">Check Firebase & Cloudinary are working</div>
-          </div>
-          <div style="color:var(--mut)">›</div>
-        </div>
-        <div class="set-row">
-          <div>
-            <div class="set-label">Data Storage</div>
-            <div class="set-sub" id="set-storage">Checking...</div>
-          </div>
-          <div class="badge" id="set-storage-badge">...</div>
+          <div class="badge bb" id="update-badge">v6.6.5</div>
         </div>
       </div>
 

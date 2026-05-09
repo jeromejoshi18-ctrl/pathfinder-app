@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <title>Pathfinder App v6.6.1</title>
+  <title>Pathfinder App v6.6.5</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -601,24 +601,9 @@
         <div class="set-row" id="update-row" style="cursor:pointer" onclick="checkForUpdates()">
           <div>
             <div class="set-label">App Version</div>
-            <div class="set-sub" id="update-sub">PathfinderApp v6.0 — Tap to check for updates</div>
+            <div class="set-sub" id="update-sub">PathfinderApp v6.6.5 — Tap to check for updates</div>
           </div>
-          <div class="badge bb" id="update-badge">v6.0</div>
-        </div>
-        <div class="set-row" style="cursor:pointer"
-          onclick="checkConnections().then(r=>toast('Firebase: '+(r.fbOk?'✅':'❌')+' · Cloudinary: '+(r.cldOk?'✅':'❌')))">
-          <div>
-            <div class="set-label">🔌 Test Connections</div>
-            <div class="set-sub">Check Firebase & Cloudinary are working</div>
-          </div>
-          <div style="color:var(--mut)">›</div>
-        </div>
-        <div class="set-row">
-          <div>
-            <div class="set-label">Data Storage</div>
-            <div class="set-sub" id="set-storage">Checking...</div>
-          </div>
-          <div class="badge" id="set-storage-badge">...</div>
+          <div class="badge bb" id="update-badge">v6.6.5</div>
         </div>
       </div>
 

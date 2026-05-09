@@ -87,7 +87,10 @@ async function loadDevotionHistory() {
   if (!list) return;
 
   const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}`) || {};
-  const sortedPosts = Object.entries(posts).sort((a, b) => b[1].ts - a[1].ts);
+  
+  // Filter out any "dummy" or invalid data that doesn't have a timestamp or text
+  const validPosts = Object.entries(posts).filter(([pid, p]) => p && p.ts && p.t);
+  const sortedPosts = validPosts.sort((a, b) => b[1].ts - a[1].ts);
 
   if (sortedPosts.length === 0) {
     list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">No devotion posts yet.</div>';
@@ -148,6 +151,31 @@ async function loadDevotionHistory() {
 function closeJournalDash() {
   const el = id('dev-journal-dash');
   if (el) el.style.display = 'none';
+}
+
+async function postDevotion() {
+  const txt = id('dev-post-ta').value.trim();
+  const date = id('dev-post-date').value;
+  if (!txt) { toast('⚠️ Please type a devotion message'); return; }
+  if (!date) { toast('⚠️ Please select a date'); return; }
+
+  toast('Posting devotion...');
+  // Use 'tm' for the user-selected date string and 'ts' for the actual creation time
+  const obj = { 
+    s: cu.name, 
+    t: txt, 
+    ts: Date.now(), 
+    tm: date 
+  };
+  
+  const res = await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}`, obj);
+  if (res) {
+    id('dev-post-ta').value = '';
+    toast('✅ Devotion posted to class!');
+    loadDevotionHistory();
+  } else {
+    toast('❌ Failed to post devotion');
+  }
 }
 
 async function viewPostJournals(pid, dateStr) {
@@ -238,6 +266,23 @@ async function loadStudentHistory(type, targetId) {
             <button class="sbtn" style="padding:4px 8px;font-size:10px;background:var(--accent);flex:1" onclick="window.open('${f.url}', '_blank')">👁️ View Full</button>
             <button class="sbtn" style="padding:4px 8px;font-size:10px;background:var(--red);flex:1" onclick="deleteUploadRecord('${type}', '${f.fid}', '${targetId}')">🗑️ Delete</button>
           </div>
+          
+          ${(f.score_n || f.score_c) ? `
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:15px">
+              <div style="flex:1">
+                <div style="font-size:9px; color:var(--mut); text-transform:uppercase">Neatness</div>
+                <div style="color:#fbbf24; font-size:14px">${'★'.repeat(f.score_n || 0)}${'☆'.repeat(5 - (f.score_n || 0))}</div>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:9px; color:var(--mut); text-transform:uppercase">Clarity</div>
+                <div style="color:#fbbf24; font-size:14px">${'★'.repeat(f.score_c || 0)}${'☆'.repeat(5 - (f.score_c || 0))}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="margin-top:10px; padding:6px; background:var(--bg3); border-radius:6px; text-align:center; font-size:10px; color:var(--mut)">
+              ⏳ Pending Evaluation
+            </div>
+          `}
         </div>
       `).join('');
 }
@@ -816,61 +861,14 @@ async function markIndivAtt(status) {
   }
 }
 
-async function saveSc() {
-  const i = id('sc-sel').value;
-  if (i === 'all') {
-    toast('⚠️ Please select a specific student first!');
-    return;
-  }
-  const name = classStudents[i];
-  if (!name) return;
-  toast('Saving scores...');
-  // Map short keys (p, n, c) back to full keys for Firestore consistency
-  const fullData = {
-    punctuality: sc.p || 0,
-    neatness: sc.n || 0,
-    clarity: sc.c || 0,
-    ts: Date.now(),
-    name: name
-  };
-  await dbSet(`clubs/${clubKey}/scores/${cu.classId}`, { [san(name)]: fullData });
-  toast('✅ Scores updated!');
-  scLocked = true;
-  syncScoreUI();
-  buildStuView(); // Live sync for student dashboard
-}
 
-
-function unlockSc() {
-  const i = id('sc-sel').value;
-  if (i === 'all') {
-    toast('⚠️ Please select a specific student first!');
-    return;
-  }
-  scLocked = false;
-  syncScoreUI();
-  toast('🔓 Scores unlocked for editing');
-}
-
-function syncScoreUI() {
-  const isLocked = scLocked;
-  if (id('sc-save-btn')) id('sc-save-btn').style.display = isLocked ? 'none' : 'block';
-  if (id('sc-update-btn')) id('sc-update-btn').style.display = isLocked ? 'block' : 'none';
-  if (id('sc-saved-banner')) id('sc-saved-banner').style.display = isLocked ? 'block' : 'none';
-
-  // Update star interactivity
-  document.querySelectorAll('.starr .st').forEach(s => {
-    s.style.pointerEvents = isLocked ? 'none' : 'auto';
-    s.style.opacity = isLocked ? '0.7' : '1';
-  });
-}
 
 // ═══════════════════════════════════════════════════
 // ASSESSMENT & SCORING
 // ═══════════════════════════════════════════════════
 function buildAssDDs() {
   const stu = getStu();
-  const ids = ['sc-sel', 'req-stu-sel', 'uploads-stu-sel', 'att-stu-sel'];
+  const ids = ['score-stu-sel', 'req-stu-sel', 'uploads-stu-sel', 'att-stu-sel'];
   if (stu.length === 0) {
     const empty = '<option value="all">No students yet</option>';
     ids.forEach(x => { const el = id(x); if (el) el.innerHTML = empty; });
@@ -880,7 +878,7 @@ function buildAssDDs() {
   ids.forEach(x => {
     const el = id(x);
     if (el) {
-      if (x === 'att-stu-sel' || x === 'sc-sel') {
+      if (x === 'att-stu-sel' || x === 'score-stu-sel') {
         el.innerHTML = `<option value="">Choose a student...</option>` + stu.map((s, i) => `<option value="${i}">${s}</option>`).join('');
       } else {
         el.innerHTML = opts;
@@ -906,25 +904,61 @@ function setStar(k, v) {
 // STUDENT SCORE VIEW
 // ═══════════════════════════════════════════════════
 async function buildStuView() {
-  const noScore = `<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No scores yet. Your instructor hasn't scored you yet.</div>`;
+  const noScore = `<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No evaluations yet. Keep uploading your work!</div>`;
   const noAtt = `<div style="text-align:center;padding:20px;color:var(--mut);font-size:13px">No attendance records yet.</div>`;
-  const sl = { punctuality: 'Punctuality', neatness: 'Neatness / Presentation', clarity: 'Subject Clarity' };
 
-  // Load scores from Firebase (LIVE)
-  if (window.unsubStuScore) { window.unsubStuScore(); window.unsubStuScore = null; }
-  const scorePath = `clubs/${clubKey}/scores/${cu.classId}`;
-  window.unsubStuScore = await dbListen(scorePath, (classScores) => {
-    const scoreData = classScores ? classScores[san(cu.name)] : null;
-    const d = id('stu-scores');
-    if (d) {
-      if (scoreData && (scoreData.punctuality || scoreData.neatness || scoreData.clarity)) {
-        d.innerHTML = Object.entries(sl).map(([k, label]) => {
-          const v = scoreData[k] || 0;
-          return `<div style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;color:var(--mut)">${label}</span><span style="font-size:14px;font-weight:800;color:var(--amb)">${v}/5</span></div><div class="sbw"><div class="sbar" style="width:${v * 20}%"></div></div></div>`;
-        }).join('');
-      } else { d.innerHTML = noScore; }
+  const d = id('stu-scores');
+  if (d) {
+    d.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading your grades...</div>';
+    
+    // Fetch both categories
+    const [reqs, hons] = await Promise.all([
+      dbGet(`clubs/${clubKey}/uploads/requirements/${cu.classId}/${san(cu.name)}/history`),
+      dbGet(`clubs/${clubKey}/uploads/honors/${cu.classId}/${san(cu.name)}/history`)
+    ]);
+
+    const getLatestScore = (data) => {
+      if (!data) return null;
+      const items = Object.values(data).filter(f => f.score_n || f.score_c).sort((a,b) => b.ts - a.ts);
+      return items.length > 0 ? items[0] : null;
+    };
+
+    const rLatest = getLatestScore(reqs);
+    const hLatest = getLatestScore(hons);
+
+    if (!rLatest && !hLatest) {
+      d.innerHTML = noScore;
+    } else {
+      let html = '';
+      if (rLatest) {
+        const total = (rLatest.score_n || 0) + (rLatest.score_c || 0);
+        html += `
+          <div style="margin-bottom:15px">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+              <span style="font-size:13px; font-weight:700">📓 Requirement Book</span>
+              <span style="font-size:13px; color:var(--accent); font-weight:800">${total}/10</span>
+            </div>
+            <div class="sbw" style="height:8px"><div class="sbar" style="width:${total * 10}%"></div></div>
+            <div style="font-size:10px; color:var(--mut); margin-top:4px">Latest: ${rLatest.name || 'Work'} evaluated on ${new Date(rLatest.gradedAt).toLocaleDateString()}</div>
+          </div>
+        `;
+      }
+      if (hLatest) {
+        const total = (hLatest.score_n || 0) + (hLatest.score_c || 0);
+        html += `
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+              <span style="font-size:13px; font-weight:700">🏅 Honors</span>
+              <span style="font-size:13px; color:var(--pur); font-weight:800">${total}/10</span>
+            </div>
+            <div class="sbw" style="height:8px"><div class="sbar" style="width:${total * 10}%"></div></div>
+            <div style="font-size:10px; color:var(--mut); margin-top:4px">Latest: ${hLatest.name || 'Work'} evaluated on ${new Date(hLatest.gradedAt).toLocaleDateString()}</div>
+          </div>
+        `;
+      }
+      d.innerHTML = html || noScore;
     }
-  });
+  }
 
   // Load attendance from Firebase (LIVE)
   if (window.unsubStuAtt) { window.unsubStuAtt(); window.unsubStuAtt = null; }
@@ -1088,32 +1122,111 @@ async function loadStudentReqs(i) {
   id('inst-req-content').innerHTML = data ? `<div style="font-size:13px;color:var(--mut)">Completed: ${Object.keys(data).length} requirements</div>` : 'No progress yet.';
 }
 
-async function loadExistingScores(i) {
-  if (i === 'all') {
-    sc = { p: 0, n: 0, c: 0 };
-    ['p', 'n', 'c'].forEach(k => {
-      [1, 2, 3, 4, 5].forEach(n => id('star-' + k + '-' + n)?.classList.remove('on'));
-      id('sv-' + k).textContent = '0/5';
-    });
-    scLocked = true;
-    syncScoreUI();
+// ═══════════════════════════════════════════════════
+// NEW SUBDIVIDED SCORING SYSTEM
+// ═══════════════════════════════════════════════════
+window.currentScoreCat = 'requirements';
+window.currentEvalFid = null;
+window.evalSc = { n: 0, c: 0 };
+
+function setScoreCat(cat, el) {
+  window.currentScoreCat = cat;
+  document.querySelectorAll('#sub-instructors-assessment .tabs .tab').forEach(t => t.classList.remove('a'));
+  el.classList.add('a');
+  loadStudentWorkToScore(id('score-stu-sel').value);
+}
+window.setScoreCat = setScoreCat;
+
+async function loadStudentWorkToScore(stuIdx) {
+  const list = id('score-work-list');
+  if (!list) return;
+  if (!stuIdx) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut)">Select a student to see their work</div>';
     return;
   }
-  const name = classStudents[i];
-  if (!name) return;
-  const classScores = await dbGet(`clubs/${clubKey}/scores/${cu.classId}`);
-  const data = classScores ? classScores[san(name)] : null;
-  if (data) {
-    sc = { p: data.punctuality || 0, n: data.neatness || 0, c: data.clarity || 0 };
-  } else {
-    sc = { p: 0, n: 0, c: 0 };
+
+  const studentName = classStudents[parseInt(stuIdx)];
+  if (!studentName) return;
+
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Loading submissions...</div>';
+
+  const path = `clubs/${clubKey}/uploads/${window.currentScoreCat}/${cu.classId}/${san(studentName)}/history`;
+  const data = await dbGet(path) || {};
+  const items = Object.entries(data).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+
+  if (items.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mut)">No ${window.currentScoreCat} uploads found for this student.</div>`;
+    return;
   }
-  ['p', 'n', 'c'].forEach(k => {
-    const val = sc[k];
-    [1, 2, 3, 4, 5].forEach(n => id('star-' + k + '-' + n)?.classList.toggle('on', n <= val));
-    id('sv-' + k).textContent = val + '/5';
-  });
-  scLocked = true;
-  syncScoreUI();
+
+  list.innerHTML = items.map(([fid, f]) => {
+    const hasScore = f.score_n || f.score_c;
+    const scoreBadge = hasScore ? `<div class="badge bg" style="font-size:10px">Graded: ${f.score_n + f.score_c}/10</div>` : `<div class="badge br" style="font-size:10px">Not Graded</div>`;
+    
+    return `
+      <div class="card" style="margin-bottom:12px; padding:12px; display:flex; align-items:center; gap:15px">
+        <img src="${f.url}" style="width:60px; height:60px; object-fit:cover; border-radius:6px; cursor:pointer" onclick="window.open('${f.url}','_blank')">
+        <div style="flex:1">
+          <div style="font-size:14px; font-weight:700">${f.name || 'Submission'}</div>
+          <div style="font-size:11px; color:var(--mut)">${new Date(f.ts).toLocaleDateString()}</div>
+          ${scoreBadge}
+        </div>
+        <button class="sbtn" style="width:auto; padding:8px 15px; font-size:12px; background:var(--accent)" onclick="openEvaluation('${fid}', '${f.url}')">
+          ${hasScore ? 'Update Grade' : 'Evaluate'}
+        </button>
+      </div>
+    `;
+  }).join('');
 }
+window.loadStudentWorkToScore = loadStudentWorkToScore;
+
+function openEvaluation(fid, url) {
+  window.currentEvalFid = fid;
+  id('eval-img').src = url;
+  id('eval-card').style.display = 'flex';
+  
+  // Reset or load existing score
+  // We'll need to fetch the record again or pass it in. For simplicity, we reset first.
+  setEvalSc('n', 0);
+  setEvalSc('c', 0);
+}
+window.openEvaluation = openEvaluation;
+
+function setEvalSc(type, val) {
+  window.evalSc[type] = val;
+  const container = id('stars-' + type);
+  if (container) {
+    container.querySelectorAll('span').forEach((s, i) => {
+      s.classList.toggle('on', (i + 1) <= val);
+    });
+  }
+  id('eval-sv-' + type).textContent = val + '/5';
+}
+window.setEvalSc = setEvalSc;
+
+async function saveEvaluation() {
+  if (!window.currentEvalFid) return;
+  const stuIdx = id('score-stu-sel').value;
+  const studentName = classStudents[parseInt(stuIdx)];
+  if (!studentName) return;
+
+  toast('Saving grade...');
+  const path = `clubs/${clubKey}/uploads/${window.currentScoreCat}/${cu.classId}/${san(studentName)}/history/${window.currentEvalFid}`;
+  
+  const ok = await dbSet(path, {
+    score_n: window.evalSc.n,
+    score_c: window.evalSc.c,
+    gradedAt: Date.now(),
+    gradedBy: cu.name
+  });
+
+  if (ok) {
+    toast('✅ Grade saved!');
+    id('eval-card').style.display = 'none';
+    loadStudentWorkToScore(stuIdx);
+  } else {
+    toast('❌ Save failed');
+  }
+}
+window.saveEvaluation = saveEvaluation;
 
