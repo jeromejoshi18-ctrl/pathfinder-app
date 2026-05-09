@@ -661,7 +661,7 @@ function applyBtnStyle(el, c) {
 // Global state for instructor attendance management
 let attSelectedStudent = null;
 let attClassRecords = {};
-let attLocked = true;
+
 
 async function loadStudentAttendance(stuIdx) {
   if (stuIdx === "" || stuIdx === "all") {
