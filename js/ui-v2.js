@@ -87,10 +87,18 @@ async function loadDevotionHistory() {
   const list = id(targetId);
   if (!list) return;
 
-  const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}/posts`) || {};
+  const path = `clubs/${clubKey}/devotionPosts/${cu.classId}/posts`;
+  console.log('Fetching from path:', path);
+  const posts = await dbGet(path) || {};
+  console.log('Raw posts data:', posts);
   
   // Filter out any "dummy" or invalid data that doesn't have a timestamp or text
-  const validPosts = Object.entries(posts).filter(([pid, p]) => p && p.ts && p.t);
+  const validPosts = Object.entries(posts).filter(([pid, p]) => {
+    const isValid = p && p.ts && p.t;
+    if (!isValid) console.warn('Skipping invalid post:', pid, p);
+    return isValid;
+  });
+  console.log('Valid posts count:', validPosts.length);
   const sortedPosts = validPosts.sort((a, b) => b[1].ts - a[1].ts);
 
   if (sortedPosts.length === 0) {
