@@ -81,12 +81,13 @@ async function initDevotionTab() {
 }
 
 async function loadDevotionHistory() {
+  console.log('--- loadDevotionHistory v6.6.5-FIX ---');
   const isStudent = cu.role === 'student';
   const targetId = isStudent ? 'dev-posts-list' : 'dev-inst-history-list';
   const list = id(targetId);
   if (!list) return;
 
-  const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}`) || {};
+  const posts = await dbGet(`clubs/${clubKey}/devotionPosts/${cu.classId}/posts`) || {};
   
   // Filter out any "dummy" or invalid data that doesn't have a timestamp or text
   const validPosts = Object.entries(posts).filter(([pid, p]) => p && p.ts && p.t);
@@ -168,10 +169,20 @@ async function postDevotion() {
     tm: date 
   };
   
-  const res = await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}`, obj);
+  const res = await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}/posts`, obj);
   if (res) {
     id('dev-post-ta').value = '';
     toast('✅ Devotion posted to class!');
+    
+    // Also post to the live chat feed so it shows up on the dashboard
+    dbPush(`clubs/${clubKey}/messages/devotion-${cu.classId}`, {
+      s: cu.name,
+      t: txt,
+      ts: Date.now(),
+      r: cu.role,
+      roleLabel: (cu.role === 'instructor' ? 'Instructor' : 'Director')
+    });
+
     loadDevotionHistory();
   } else {
     toast('❌ Failed to post devotion');
