@@ -94,17 +94,9 @@
     const upMap = { mgport: 'mgp-files' };
     const upIco = { mgport: '📁' };
     let demoMsgs = {
-      global: [
-        { s: 'Director Johnson', r: 'director', t: 'Welcome to PathfinderApp! 🎉', tm: '9:00 AM', uid: 'x1', cls: 'all' },
-        { s: 'Instructor Maria', r: 'instructor', t: 'Camporee is next Saturday! Get ready!', tm: '10:30 AM', uid: 'x2', cls: 'all' },
-      ],
-      devotion: [
-        { s: 'Instructor Maria', r: 'instructor', t: 'Today\'s devotion theme: Faithfulness. Read Joshua 1:9.', tm: '8:00 AM', uid: 'x3', cls: 'all', type: 'devotion' },
-        { s: 'Instructor James', r: 'instructor', t: 'Ranger class devotion at 8:30am. Don\'t be late!', tm: '8:05 AM', uid: 'x4', cls: 'ranger', type: 'devotion' },
-      ],
-      ranger: [
-        { s: 'Instructor Maria', r: 'instructor', t: 'Ranger class — please bring your honor books on Friday.', tm: 'Yesterday', uid: 'x5', cls: 'ranger' },
-      ],
+      global: [],
+      devotion: [],
+      ranger: [],
     };
 
     const CLASSES = [

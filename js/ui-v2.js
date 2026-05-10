@@ -274,7 +274,7 @@ async function loadStudentHistory(type, targetId) {
                 <div style="color:#fbbf24; font-size:14px">${'★'.repeat(f.score_n || 0)}${'☆'.repeat(5 - (f.score_n || 0))}</div>
               </div>
               <div style="flex:1">
-                <div style="font-size:9px; color:var(--mut); text-transform:uppercase">Clarity</div>
+                <div style="font-size:9px; color:var(--mut); text-transform:uppercase">Subject Clarity</div>
                 <div style="color:#fbbf24; font-size:14px">${'★'.repeat(f.score_c || 0)}${'☆'.repeat(5 - (f.score_c || 0))}</div>
               </div>
             </div>
@@ -1003,22 +1003,6 @@ function mgTab(tab) {
   if (tab === 'portfolio') loadStudentHistory('mgport', 'mgp-files');
 }
 
-// ═══════════════════════════════════════════════════
-// DEVOTION POSTING
-// ═══════════════════════════════════════════════════
-async function postDevotion() {
-  const txt = id('dev-post-ta').value.trim();
-  const date = id('dev-post-date').value;
-  if (!txt) { toast('⚠️ Please type a devotion message'); return; }
-  if (!date) { toast('⚠️ Please select a date'); return; }
-
-  toast('Posting devotion...');
-  const obj = { s: cu.name, t: txt, ts: Date.now(), tm: date };
-  await dbPush(`clubs/${clubKey}/devotionPosts/${cu.classId}`, obj);
-  id('dev-post-ta').value = '';
-  toast('✅ Devotion posted to class!');
-  loadDevotionHistory();
-}
 
 // ═══════════════════════════════════════════════════
 // INSTRUCTOR UPLOADS & VIEWED TRACKING
