@@ -1,10 +1,22 @@
 
 // Global Error Handler for debugging
-window.onerror = function(msg, url, line) {
-  console.error('Global Error:', msg, 'at', url, ':', line);
-  alert('App Error: ' + msg + '\nLine: ' + line);
+window.onerror = function(msg, url, line, col, err) {
+  console.error('Global Error:', msg, 'at', url, ':', line, 'col:', col, 'error:', err);
+  let errMsg = 'App Error: ' + msg + '\nLine: ' + line + '\nCol: ' + col + '\nURL: ' + (url || 'unknown');
+  if (err && err.stack) {
+    errMsg += '\nStack: ' + err.stack.substring(0, 150) + '...';
+  }
+  alert(errMsg);
   return false;
 };
+
+// Handle unhandled promise rejections (useful for async/Firebase errors)
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('Unhandled Promise Rejection:', event.reason);
+  let reasonMsg = event.reason ? (event.reason.message || event.reason) : 'Unknown reason';
+  let stackMsg = (event.reason && event.reason.stack) ? '\nStack: ' + event.reason.stack.substring(0, 150) + '...' : '';
+  alert('Unhandled Rejection: ' + reasonMsg + stackMsg);
+});
 
 // ═══════════════════════════════════════════════════
 // UTILITIES
