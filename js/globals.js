@@ -2,6 +2,12 @@
 // Global Error Handler for debugging
 window.onerror = function(msg, url, line, col, err) {
   console.error('Global Error:', msg, 'at', url, ':', line, 'col:', col, 'error:', err);
+  
+  // Suppress generic "Script error." alerts on line 0 (usually cross-origin script load failures/network drops)
+  if (msg && (msg.toLowerCase().indexOf('script error') > -1) && (line === 0 || !line)) {
+    return true; // prevent default browser handling and do not alert
+  }
+  
   let errMsg = 'App Error: ' + msg + '\nLine: ' + line + '\nCol: ' + col + '\nURL: ' + (url || 'unknown');
   if (err && err.stack) {
     errMsg += '\nStack: ' + err.stack.substring(0, 150) + '...';

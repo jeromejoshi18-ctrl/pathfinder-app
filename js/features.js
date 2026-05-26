@@ -264,6 +264,10 @@
     // ═══════════════════════════════════════════════════
     let _exitToastShown = false;
     function goBack() {
+      // Close open modals/sheets first
+      if (id('image-action-sheet')?.style.display === 'flex') { closeSheet(); return; }
+      if (id('devotion-modal')?.style.display === 'flex') { if (window.closeDevotionModal) closeDevotionModal(); else id('devotion-modal').style.display = 'none'; return; }
+      if (id('eval-card')?.style.display === 'flex') { id('eval-card').style.display = 'none'; return; }
       if (id('student-modal')?.style.display === 'flex') { closeStudentModal(); return; }
       if (id('class-modal')?.style.display === 'flex') { closeClassModal(); return; }
 
@@ -285,8 +289,13 @@
       if (currentTab === 'home') {
         if (_exitToastShown) {
           window._shouldExit = true;
-          if (typeof Android !== 'undefined' && Android.exitApp) Android.exitApp();
-          else if (window.close) window.close();
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+            window.Capacitor.Plugins.App.exitApp();
+          } else if (typeof Android !== 'undefined' && Android.exitApp) {
+            Android.exitApp();
+          } else if (window.close) {
+            window.close();
+          }
         } else {
           _exitToastShown = true;
           toast('Press back again to exit');
@@ -297,6 +306,10 @@
       swTab('home', false);
     }
     window.addEventListener('popstate', () => goBack());
+    document.addEventListener('backbutton', (e) => {
+      e.preventDefault();
+      goBack();
+    }, false);
 
     // ═══════════════════════════════════════════════════
     // NOTIFICATIONS
