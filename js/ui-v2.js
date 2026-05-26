@@ -229,7 +229,14 @@ async function viewPostJournals(pid, dateStr) {
 window.currentDevotionPostId = null;
 function openDevotionUpload(pid) {
   window.currentDevotionPostId = pid;
-  requestImageFromApp('devotion');
+  id('devotion-modal').style.display = 'flex';
+  id('dev-photo-preview').style.display = 'none';
+  id('dev-submit-btn').style.display = 'none';
+  window.currentDevotionPhoto = null;
+}
+
+function closeDevotionModal() {
+  id('devotion-modal').style.display = 'none';
 }
 
 function handleGalleryUpload(input, type) {

@@ -218,19 +218,46 @@
     }
 
     async function handleDevotionUploadData(base64) {
-      if (!cu) return;
+      if (!base64) return;
+      window.currentDevotionPhoto = base64;
+      const img = id('dev-preview-img');
+      if (img) {
+        img.src = base64;
+        id('dev-photo-preview').style.display = 'block';
+        id('dev-submit-btn').style.display = 'block';
+        id('dev-submit-btn').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    async function submitDevotionJournal() {
+      if (!cu || !window.currentDevotionPhoto) return;
       const pid = window.currentDevotionPostId;
       if (!pid) { toast('⚠️ Please select a post to upload your journal to.'); return; }
 
-      toast('Uploading Devotion...');
-      const url = await uploadToCloudinary(base64, `devotion_${san(cu.name)}_${Date.now()}`);
-      if (!url) { toast('Upload failed'); return; }
+      load('Uploading Journal...');
+      const url = await uploadToCloudinary(window.currentDevotionPhoto, `devotion_${san(cu.name)}_${Date.now()}`);
+      if (!url) { hideLoad(); toast('❌ Upload failed'); return; }
 
-      const obj = { url, ts: Date.now(), name: cu.name, uploaded: true };
-      await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${pid}/${san(cu.name)}`, obj);
-      toast('📖 Devotion submitted!');
-      if (window.loadDevotionHistory) window.loadDevotionHistory();
+      const obj = { 
+        url, 
+        ts: Date.now(), 
+        name: cu.name, 
+        uploaded: true 
+      };
+      
+      const ok = await dbSet(`clubs/${clubKey}/devotionJournals/${cu.classId}/${pid}/${san(cu.name)}`, obj);
+      hideLoad();
+      
+      if (ok) {
+        toast('📖 Journal submitted!');
+        closeDevotionModal();
+        if (window.loadDevotionHistory) window.loadDevotionHistory();
+      } else {
+        toast('❌ Failed to save to database');
+      }
     }
+
+    window.submitDevotionJournal = submitDevotionJournal;
 
     // ═══════════════════════════════════════════════════
     // BACK BUTTON NAVIGATION

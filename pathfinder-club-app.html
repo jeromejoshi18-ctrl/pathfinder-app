@@ -715,6 +715,33 @@
       <div style="flex:1;overflow-y:auto;padding:16px;" id="class-modal-content"></div>
     </div>
 
+    <!-- DEVOTION UPLOAD MODAL -->
+    <div id="devotion-modal"
+      style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9500;flex-direction:column;">
+      <div
+        style="background:var(--hdr-bg);padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--hdr-border);position:sticky;top:0;box-shadow:var(--shadow);">
+        <button onclick="closeDevotionModal()"
+          style="background:none;border:none;color:var(--accent);font-size:15px;font-weight:700;cursor:pointer;padding:4px 8px 4px 0">‹
+          Back</button>
+        <div style="font-size:17px;font-weight:700;color:var(--txt)">Submit Journal</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px;">
+        <div class="card" style="padding:20px">
+          <div style="text-align:center;margin-bottom:20px">
+            <div id="dev-photo-preview" style="display:none;margin-bottom:15px">
+              <img id="dev-preview-img" src="" style="width:100%;max-height:300px;object-fit:contain;border-radius:12px;border:1px solid var(--border)">
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:15px">
+              <button class="sbtn" style="flex:1;background:var(--mut)" onclick="triggerPhoto('devotion')">📷 Take Photo</button>
+              <button class="sbtn" style="flex:1;background:var(--bg3);color:var(--txt)" onclick="document.getElementById('gallery-input-devotion').click()">🖼️ Gallery</button>
+            </div>
+            <input type="file" id="gallery-input-devotion" style="display:none" accept="image/*" onchange="handleGalleryUpload(this, 'devotion')">
+            <button id="dev-submit-btn" class="sbtn" style="display:none;background:linear-gradient(135deg,var(--accent),#3b82f6)" onclick="submitDevotionJournal()">📖 Submit Journal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 
