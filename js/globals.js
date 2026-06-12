@@ -23,6 +23,9 @@ window.addEventListener('unhandledrejection', function(event) {
   alert('Unhandled Rejection: ' + reasonMsg + stackMsg);
 });
 
+// Dummy fallback for older cached ui-v2.js files calling syncScoreUI
+window.syncScoreUI = window.syncScoreUI || function() { console.log('Dummy syncScoreUI called'); };
+
 // ═══════════════════════════════════════════════════
 // UTILITIES
 // ═══════════════════════════════════════════════════
