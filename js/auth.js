@@ -43,12 +43,12 @@
     }
     function pickSlot(s) {
       selSlot = s;
-      ['slot1', 'slot2'].forEach(x => id('rb-' + s)?.classList.remove('s'));
+      ['slot1', 'slot2'].forEach(x => id('rb-' + x)?.classList.remove('s'));
       id('rb-' + s)?.classList.add('s');
     }
     function buildClsGrid() {
       const g = id('cls-grid'); if (!g) return;
-      g.innerHTML = CLASSES.map(c => `<div class="c-btn" id="cb-${c.id}" onclick="pickCls('${c.id}')"><span style="font-size:18px;display:block;margin-bottom:3px">${c.e}</span><strong>${c.n}</strong><br><span style="font-size:10px;color:var(--mut)">${c.l}·${c.g}</span></div>`).join('');
+      g.innerHTML = CLASSES.map(c => `<div class="c-btn" id="cb-${c.id}" onclick="pickCls('${c.id}')"><span style="font-size:18px;display:block;margin-bottom:3px">${c.e}</span><strong>${c.n}</strong></div>`).join('');
     }
     function pickCls(cid) {
       selClass = cid;
