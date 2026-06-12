@@ -92,7 +92,7 @@ window.checkForUpdates = window.checkForUpdates || (() => console.log('Safety fa
 // ═══════════════════════════════════════════════════
 // GLOBAL STATE
 // ═══════════════════════════════════════════════════
-const APP_VERSION = '6.6.5';
+const APP_VERSION = '6.6.7';
 const CLOUDINARY_CLOUD_NAME = 'dq1kk9tkd';
 const CLOUDINARY_UPLOAD_PRESET = 'tyxio0qs';
 
