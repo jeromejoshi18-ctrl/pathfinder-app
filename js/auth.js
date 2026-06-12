@@ -22,6 +22,13 @@
       id('at-su').className = 'auth-tab' + (t === 'su' ? ' a' : '');
     }
     function pickRole(r) {
+      if (r === 'instructor' || r === 'director') {
+        const code = prompt('Enter authorized code to select this role:');
+        if (code !== '3456') {
+          alert('Invalid code. You cannot select this role.');
+          return;
+        }
+      }
       selRole = r;
       ['student', 'instructor', 'director'].forEach(x => id('rb-' + x).classList.remove('s'));
       id('rb-' + r).classList.add('s');
@@ -57,24 +64,6 @@
       const email = id('si-email').value.trim(), pw = id('si-pw').value;
       setErr('si-err', '');
       if (!email || !pw) { setErr('si-err', 'Please fill in all fields.'); return; }
-      if (demoMode) {
-        const n = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const cls = CLASSES.find(c => c.id === 'ranger') || { n: 'All', e: '🎖' };
-        const userName = n || 'User';
-        cu = { 
-          name: userName, 
-          email, 
-          role: 'student', 
-          dirType: '', 
-          classId: 'ranger', 
-          cn: cls.n, 
-          ce: cls.e, 
-          clubName: 'Demo Club', 
-          ini: userName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(), 
-          uid: 'demo-' + Date.now() 
-        };
-        clubKey = san('Demo Club'); launch(); return;
-      }
       load('Signing in...');
       // Look up user by email key in DB
       const emailKey = san(email);
@@ -108,11 +97,6 @@
       if (selRole === 'director' && !selDirType) { setErr('su-err', 'Please select Director or Deputy Director.'); return; }
       if ((selRole === 'student' || selRole === 'instructor') && !selClass) { setErr('su-err', 'Please select your class.'); return; }
 
-      if (demoMode) {
-        const cls = CLASSES.find(c => c.id === selClass) || { n: 'All', e: '🎖' };
-        cu = { name, email, role: selRole, dirType: selRole === 'director' ? selDirType : '', classId: selClass || 'all', slot: selRole === 'instructor' ? selSlot : '', cn: cls.n, ce: cls.e, clubName, ini: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(), uid: 'demo-' + Date.now() };
-        clubKey = san(clubName); launch(); return;
-      }
       load('Creating account...');
       const emailKey = san(email);
       // Check if account already exists

@@ -912,7 +912,6 @@ function buildAssDDs() {
     }
   });
   scLocked = true;
-  syncScoreUI();
 }
 function buildStars() {
   ['p', 'n', 'c'].forEach(k => {
@@ -1240,3 +1239,30 @@ async function saveEvaluation() {
 }
 window.saveEvaluation = saveEvaluation;
 
+// ═══════════════════════════════════════════════════
+// DIRECTOR DASHBOARD
+// ═══════════════════════════════════════════════════
+async function buildDirDash() {
+  const allAcc = await dbGet('accounts') || {};
+  const clubUsers = Object.values(allAcc).filter(a => san(a.clubName || '') === clubKey);
+  const students = clubUsers.filter(a => a.role === 'student').length;
+  const instructors = clubUsers.filter(a => a.role === 'instructor').length;
+  const directors = clubUsers.filter(a => a.role === 'director').length;
+  
+  const statsHtml = `
+    <div class="stc"><div class="stv">${students}</div><div class="stl">Students</div></div>
+    <div class="stc"><div class="stv">${instructors}</div><div class="stl">Instructors</div></div>
+    <div class="stc"><div class="stv">${clubUsers.length}</div><div class="stl">Total</div></div>
+  `;
+  const statsEl = id('dir-stats');
+  if (statsEl) statsEl.innerHTML = statsHtml;
+  
+  let clsHtml = '';
+  CLASSES.forEach(c => {
+    const cStu = clubUsers.filter(a => a.role === 'student' && a.classId === c.id).length;
+    clsHtml += `<div class="srow"><div class="av" style="background:var(--blu)">${c.e}</div><div class="si"><div class="sn">${c.n}</div><div class="sm2">${cStu} Students</div></div></div>`;
+  });
+  const classesEl = id('dir-classes');
+  if (classesEl) classesEl.innerHTML = clsHtml;
+}
+window.buildDirDash = buildDirDash;

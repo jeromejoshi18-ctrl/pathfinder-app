@@ -1,4 +1,3 @@
-
 // Global Error Handler for debugging
 window.onerror = function(msg, url, line, col, err) {
   console.error('Global Error:', msg, 'at', url, ':', line, 'col:', col, 'error:', err);
@@ -95,10 +94,10 @@ const CLOUDINARY_CLOUD_NAME = 'dq1kk9tkd';
 const CLOUDINARY_UPLOAD_PRESET = 'tyxio0qs';
 
 let cu = null, clubKey = 'default', curTab = 'home', currentTab = 'home', selRole = null, selClass = null, selDirType = null, selSlot = null;
-let currentAttendance = {}, currentHygiene = {}, currentScores = {}, currentNotes = {};
+currentAttendance = {}, currentHygiene = {}, currentScores = {}, currentNotes = {};
 
 const urlParams = new URLSearchParams(window.location.search);
-let demoMode = urlParams.get('demo') === 'true';
+let demoMode = false; // demo mode disabled
 
 let settings = { devot: true, att: true, scores: true, tip: true };
 let navHistory = [];

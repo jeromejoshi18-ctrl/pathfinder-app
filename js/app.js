@@ -65,11 +65,11 @@
             splash.style.display = 'none';
             splash.remove();
             proceed();
-          }, 500);
+          }, 100);
         } else {
           proceed();
         }
-      }, 2000);
+      }, 50);
     });
 
     // ═══════════════════════════════════════════════════
@@ -135,10 +135,7 @@
       } catch (e) {
         console.error('Launch failed:', e);
         hideLoad();
-        toast('⚠️ Connection issue. Entering Offline Mode.');
-        demoMode = true;
-        // Proceed with launch in demo mode
-        setTimeout(() => launch(), 1000);
+        toast('⚠️ Launch error: ' + e.message);
       }
     }
 
