@@ -30,15 +30,14 @@
         }
       }
       selRole = r;
-      ['student', 'instructor', 'director'].forEach(x => id('rb-' + x).classList.remove('s'));
-      id('rb-' + r).classList.add('s');
-      id('dir-subrole').style.display = r === 'director' ? 'block' : 'none';
-      id('cls-picker').style.display = (r === 'student' || r === 'instructor') ? 'block' : 'none';
-      id('slot-picker').style.display = r === 'instructor' ? 'block' : 'none';
-      if (id('instructor-name-field')) {
-        id('instructor-name-field').style.display = (r === 'instructor') ? 'block' : 'none';
-        id('email-field').style.display = (r === 'instructor') ? 'none' : 'block';
-      }
+      ['student', 'instructor', 'director'].forEach(x => { const el = id('rb-' + x); if (el) el.classList.remove('s'); });
+      const rb = id('rb-' + r); if (rb) rb.classList.add('s');
+      const dirSub = id('dir-subrole'); if (dirSub) dirSub.style.display = r === 'director' ? 'block' : 'none';
+      const clsPick = id('cls-picker'); if (clsPick) clsPick.style.display = (r === 'student' || r === 'instructor') ? 'block' : 'none';
+      const slotPick = id('slot-picker'); if (slotPick) slotPick.style.display = r === 'instructor' ? 'block' : 'none';
+      const instrField = id('instructor-name-field'); if (instrField) instrField.style.display = (r === 'instructor') ? 'block' : 'none';
+      const userField = id('username-field'); if (userField) userField.style.display = (r === 'instructor') ? 'none' : 'block';
+      const emailField = id('email-field'); if (emailField) emailField.style.display = (r === 'instructor') ? 'none' : 'block';
     }
     function pickDirType(t) {
       selDirType = t;
@@ -65,7 +64,7 @@
     // SIGN IN / SIGN UP
     // ═══════════════════════════════════════════════════
     async function doSignIn() {
-      let email = id('si-email').value.trim();
+      let username = id('si-username').value.trim();
       setErr('si-err', '');
       
       if (!selRole) { setErr('si-err', 'Please select your role.'); return; }
@@ -73,23 +72,23 @@
       if (selRole === 'instructor') {
         const instr = id('si-instructor').value;
         if (!instr) { setErr('si-err', 'Please select your name.'); return; }
-        email = instr;
+        username = instr;
       }
       
-      if (!email) { setErr('si-err', 'Please fill in your email or select a name.'); return; }
+      if (!username) { setErr('si-err', 'Please enter your name or select one from the list.'); return; }
       if (selRole === 'director' && !selDirType) { setErr('si-err', 'Please select Director or Deputy Director.'); return; }
       if ((selRole === 'student' || selRole === 'instructor') && !selClass) { setErr('si-err', 'Please select your class.'); return; }
 
       load('Signing in...');
       // Look up user by email key in DB
-      const emailKey = san(email);
-      let p = await dbGet('accounts/' + emailKey);
+      const usernameKey = san(username);
+      let p = await dbGet('accounts/' + usernameKey);
       
       if (!p) {
         // Auto-create account if not found
         p = {
-          name: email.split('@')[0],
-          email: email,
+          name: username,
+          email: username,
           role: selRole,
           dirType: selRole === 'director' ? selDirType : '',
           classId: selClass || 'all',
@@ -97,14 +96,14 @@
           clubName: 'Oasis Pathfinder Club',
           createdAt: Date.now()
         };
-        await dbSet('accounts/' + emailKey, p);
+        await dbSet('accounts/' + usernameKey, p);
       }
 
       const cls = CLASSES.find(c => c.id === p.classId) || { n: 'All', e: '👔' };
       const name = p.name || 'User';
       cu = { 
         ...p, 
-        uid: emailKey, 
+        uid: usernameKey, 
         cn: cls.n, 
         ce: cls.e, 
         ini: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() 
@@ -128,9 +127,9 @@
       if ((selRole === 'student' || selRole === 'instructor') && !selClass) { setErr('su-err', 'Please select your class.'); return; }
 
       load('Creating account...');
-      const emailKey = san(email);
+      const usernameKey = san(username);
       // Check if account already exists
-      const existing = await dbGet('accounts/' + emailKey);
+      const existing = await dbGet('accounts/' + usernameKey);
       if (existing) { hideLoad(); setErr('su-err', 'An account with that email already exists. Please sign in.'); return; }
       // Check instructor slot not already taken
       if (selRole === 'instructor') {
@@ -160,7 +159,7 @@
         createdAt: Date.now() 
       };
       
-      const saved = await dbSet('accounts/' + emailKey, prof);
+      const saved = await dbSet('accounts/' + usernameKey, prof);
       if (saved === false) {
         hideLoad();
         setErr('su-err', 'Could not save account. Ensure Cloud Firestore is enabled in your Firebase Console and Rules are set to public for testing.');
@@ -170,7 +169,7 @@
       const cls = CLASSES.find(c => c.id === prof.classId) || { n: 'All', e: '🎖' };
       cu = { 
         ...prof, 
-        uid: emailKey, 
+        uid: usernameKey, 
         cn: cls.n, 
         ce: cls.e, 
         ini: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() 
