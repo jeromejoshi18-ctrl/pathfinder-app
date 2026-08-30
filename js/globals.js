@@ -1,4 +1,4 @@
-// Global Error Handler for debugging
+﻿// Global Error Handler for debugging
 window.onerror = function(msg, url, line, col, err) {
   console.error('Global Error:', msg, 'at', url, ':', line, 'col:', col, 'error:', err);
   
@@ -124,13 +124,19 @@ let demoMsgs = {
 };
 
 const CLASSES = [
-  { id: 'friend', n: 'Friend', e: '🌱' },
-  { id: 'companion', n: 'Companion', e: '🤝' },
-  { id: 'explorer', n: 'Explorer', e: '🌿' },
-  { id: 'ranger', n: 'Ranger', e: '⛺' },
-  { id: 'voyager', n: 'Voyager', e: '⛵' },
-  { id: 'guide', n: 'Guide', e: '🧗' },
-  { id: 'masterguide', n: 'Master Guide', e: '🏅' }
+  { id: 'littlelamb', n: 'Little Lamb', e: '🐑' },
+  { id: 'earlybird', n: 'Early Bird', e: '🐦' },
+  { id: 'busybee', n: 'Busy Bee', e: '🐝' },
+  { id: 'sunbeam', n: 'Sunbeam', e: '☀️' },
+  { id: 'builder', n: 'Builder', e: '🧱' },
+  { id: 'helpinghand', n: 'Helping Hand', e: '🤝' },
+  { id: 'friend', n: 'Friend', e: '🌲' },
+  { id: 'companion', n: 'Companion', e: '🏕️' },
+  { id: 'explorer', n: 'Explorer', e: '🧭' },
+  { id: 'ranger', n: 'Ranger', e: '🏹' },
+  { id: 'voyager', n: 'Voyager', e: '🗺️' },
+  { id: 'guide', n: 'Guide', e: '👑' },
+  { id: 'masterguide', n: 'Master Guide', e: '🎖️' }
 ];
 
 const HONORS = [

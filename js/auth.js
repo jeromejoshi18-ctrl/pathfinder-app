@@ -35,9 +35,6 @@
       id('dir-subrole').style.display = r === 'director' ? 'block' : 'none';
       id('cls-picker').style.display = (r === 'student' || r === 'instructor') ? 'block' : 'none';
       id('slot-picker').style.display = r === 'instructor' ? 'block' : 'none';
-      if (id('pw-field')) {
-        id('pw-field').style.display = (r === 'instructor') ? 'block' : 'none';
-      }
       if (id('instructor-name-field')) {
         id('instructor-name-field').style.display = (r === 'instructor') ? 'block' : 'none';
         id('email-field').style.display = (r === 'instructor') ? 'none' : 'block';
@@ -69,7 +66,6 @@
     // ═══════════════════════════════════════════════════
     async function doSignIn() {
       let email = id('si-email').value.trim();
-      const pw = id('si-pw').value;
       setErr('si-err', '');
       
       if (!selRole) { setErr('si-err', 'Please select your role.'); return; }
@@ -81,7 +77,6 @@
       }
       
       if (!email) { setErr('si-err', 'Please fill in your email or select a name.'); return; }
-      if (selRole === 'instructor' && !pw) { setErr('si-err', 'Instructors must enter a password.'); return; }
       if (selRole === 'director' && !selDirType) { setErr('si-err', 'Please select Director or Deputy Director.'); return; }
       if ((selRole === 'student' || selRole === 'instructor') && !selClass) { setErr('si-err', 'Please select your class.'); return; }
 
@@ -95,7 +90,6 @@
         p = {
           name: email.split('@')[0],
           email: email,
-          pw: selRole === 'instructor' ? btoa(pw) : '',
           role: selRole,
           dirType: selRole === 'director' ? selDirType : '',
           classId: selClass || 'all',
@@ -104,11 +98,6 @@
           createdAt: Date.now()
         };
         await dbSet('accounts/' + emailKey, p);
-      } else {
-        // Account exists
-        if (selRole === 'instructor' && p.pw !== btoa(pw)) { 
-          hideLoad(); setErr('si-err', 'Incorrect password. Please try again.'); return; 
-        }
       }
 
       const cls = CLASSES.find(c => c.id === p.classId) || { n: 'All', e: '👔' };
