@@ -35,6 +35,13 @@
       id('dir-subrole').style.display = r === 'director' ? 'block' : 'none';
       id('cls-picker').style.display = (r === 'student' || r === 'instructor') ? 'block' : 'none';
       id('slot-picker').style.display = r === 'instructor' ? 'block' : 'none';
+      if (id('pw-field')) {
+        id('pw-field').style.display = (r === 'instructor') ? 'block' : 'none';
+      }
+      if (id('instructor-name-field')) {
+        id('instructor-name-field').style.display = (r === 'instructor') ? 'block' : 'none';
+        id('email-field').style.display = (r === 'instructor') ? 'none' : 'block';
+      }
     }
     function pickDirType(t) {
       selDirType = t;
@@ -61,16 +68,50 @@
     // SIGN IN / SIGN UP
     // ═══════════════════════════════════════════════════
     async function doSignIn() {
-      const email = id('si-email').value.trim(), pw = id('si-pw').value;
+      let email = id('si-email').value.trim();
+      const pw = id('si-pw').value;
       setErr('si-err', '');
-      if (!email || !pw) { setErr('si-err', 'Please fill in all fields.'); return; }
+      
+      if (!selRole) { setErr('si-err', 'Please select your role.'); return; }
+      
+      if (selRole === 'instructor') {
+        const instr = id('si-instructor').value;
+        if (!instr) { setErr('si-err', 'Please select your name.'); return; }
+        email = instr;
+      }
+      
+      if (!email) { setErr('si-err', 'Please fill in your email or select a name.'); return; }
+      if (selRole === 'instructor' && !pw) { setErr('si-err', 'Instructors must enter a password.'); return; }
+      if (selRole === 'director' && !selDirType) { setErr('si-err', 'Please select Director or Deputy Director.'); return; }
+      if ((selRole === 'student' || selRole === 'instructor') && !selClass) { setErr('si-err', 'Please select your class.'); return; }
+
       load('Signing in...');
       // Look up user by email key in DB
       const emailKey = san(email);
-      const p = await dbGet('accounts/' + emailKey);
-      if (!p) { hideLoad(); setErr('si-err', 'No account found with that email. Please create an account.'); return; }
-      if (p.pw !== btoa(pw)) { hideLoad(); setErr('si-err', 'Incorrect password. Please try again.'); return; }
-      const cls = CLASSES.find(c => c.id === p.classId) || { n: 'All', e: '🎖' };
+      let p = await dbGet('accounts/' + emailKey);
+      
+      if (!p) {
+        // Auto-create account if not found
+        p = {
+          name: email.split('@')[0],
+          email: email,
+          pw: selRole === 'instructor' ? btoa(pw) : '',
+          role: selRole,
+          dirType: selRole === 'director' ? selDirType : '',
+          classId: selClass || 'all',
+          slot: selRole === 'instructor' ? selSlot : '',
+          clubName: 'Oasis Pathfinder Club',
+          createdAt: Date.now()
+        };
+        await dbSet('accounts/' + emailKey, p);
+      } else {
+        // Account exists
+        if (selRole === 'instructor' && p.pw !== btoa(pw)) { 
+          hideLoad(); setErr('si-err', 'Incorrect password. Please try again.'); return; 
+        }
+      }
+
+      const cls = CLASSES.find(c => c.id === p.classId) || { n: 'All', e: '👔' };
       const name = p.name || 'User';
       cu = { 
         ...p, 

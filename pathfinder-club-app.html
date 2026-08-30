@@ -169,29 +169,9 @@
       <div class="hero-tag">"The Love of Christ Compels Us"</div>
     </div>
     <div class="auth-wrap">
-      <div class="auth-tabs">
-        <div class="auth-tab a" id="at-si" onclick="authTab('si')">Sign In</div>
-        <div class="auth-tab" id="at-su" onclick="authTab('su')">Create Account</div>
-      </div>
       <!-- SIGN IN -->
       <div id="form-si">
         <div id="si-mode-bar"></div>
-        <label class="lbl">Email</label><input class="inp" id="si-email" type="email" placeholder="your@email.com">
-        <label class="lbl">Password</label><input class="inp" id="si-pw" type="password" placeholder="••••••••">
-        <div class="err" id="si-err"></div>
-        <button class="btn-main" onclick="doSignIn()">Sign In →</button>
-        <div class="alink" onclick="authTab('su')">No account? <span>Create one</span></div>
-      </div>
-      <!-- CREATE ACCOUNT -->
-      <div id="form-su" style="display:none">
-        <label class="lbl">Pathfinder Club Name</label>
-        <select class="inp" id="su-club">
-          <option value="Oasis Pathfinder Club">Oasis Pathfinder Club</option>
-        </select>
-        <label class="lbl">Full Name</label><input class="inp" id="su-name" placeholder="e.g. Samuel Kimani">
-        <label class="lbl">Email</label><input class="inp" id="su-email" type="email" placeholder="your@email.com">
-        <label class="lbl">Password <span style="font-weight:400;color:var(--mut)">(min 6 chars)</span></label>
-        <input class="inp" id="su-pw" type="password" placeholder="••••••••">
         <label class="lbl" style="margin-top:14px">I am a...</label>
         <div class="role-row-3">
           <div class="r-btn" id="rb-student" onclick="pickRole('student')"><span
@@ -228,9 +208,40 @@
           <div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5">Each class can have 2 instructors.
             If slot is already taken the app will let you know.</div>
         </div>
-        <div class="err" id="su-err"></div>
-        <button class="btn-main" onclick="doSignUp()">Create Account →</button>
-        <div class="alink" onclick="authTab('si')">Already have an account? <span>Sign In</span></div>
+
+        <div id="email-field">
+          <label class="lbl" style="margin-top:14px;">Email</label><input class="inp" id="si-email" type="email" placeholder="your@email.com">
+        </div>
+
+        <div id="instructor-name-field" style="display:none">
+          <label class="lbl" style="margin-top:14px;">Instructor Name</label>
+          <select class="inp" id="si-instructor">
+            <option value="">-- Select your name --</option>
+            <option value="Abigail Melody">Abigail Melody</option>
+            <option value="Caroline">Caroline</option>
+            <option value="Deborah Benny">Deborah Benny</option>
+            <option value="Elfida Newton">Elfida Newton</option>
+            <option value="Ellen Augustine">Ellen Augustine</option>
+            <option value="Glory Selvakumar">Glory Selvakumar</option>
+            <option value="Hannah Eden">Hannah Eden</option>
+            <option value="Ierene">Ierene</option>
+            <option value="Juliet Dweepan">Juliet Dweepan</option>
+            <option value="Kezia Kennedy">Kezia Kennedy</option>
+            <option value="Merlin David">Merlin David</option>
+            <option value="Ponmalar">Ponmalar</option>
+            <option value="Preethi Manoj">Preethi Manoj</option>
+            <option value="Shakathi Maxson">Shakathi Maxson</option>
+            <option value="Sujatha Andrew">Sujatha Andrew</option>
+            <option value="Sujilin">Sujilin</option>
+          </select>
+        </div>
+        
+        <div id="pw-field" style="display:none">
+          <label class="lbl">Password</label><input class="inp" id="si-pw" type="password" placeholder="••••••••">
+        </div>
+        
+        <div class="err" id="si-err"></div>
+        <button class="btn-main" onclick="doSignIn()">Sign In →</button>
       </div>
     </div>
   </div>
