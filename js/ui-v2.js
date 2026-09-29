@@ -8,7 +8,7 @@ function buildNav() {
   else if (cu.role === 'instructor')
     tabs = [{ id: 'home', e: '🏠', l: 'Home' }, { id: 'instructors', e: '📋', l: 'Instruct.' }, { id: 'devotion', e: '📖', l: 'Devotion' }, { id: 'messages', e: '💬', l: 'Chat' }, { id: 'settings', e: '⚙️', l: 'Settings' }];
   else
-    tabs = [{ id: 'home', e: '🏠', l: 'Home' }, { id: 'directors', e: '🎖', l: 'Director' }, { id: 'devotion', e: '📖', l: 'Devotion' }, { id: 'masterguide', e: '🏅', l: 'MG' }, { id: 'messages', e: '💬', l: 'Chat' }, { id: 'settings', e: '⚙️', l: 'Settings' }];
+    tabs = [{ id: 'home', e: '🏠', l: 'Home' }, { id: 'directors', e: '🎖', l: 'Director' }, { id: 'masterguide', e: '🏅', l: 'MG' }, { id: 'messages', e: '💬', l: 'Chat' }, { id: 'settings', e: '⚙️', l: 'Settings' }];
   id('bnav').innerHTML = tabs.map((t, i) => `<button class="nb${i === 0 ? ' a' : ''}" id="nb-${t.id}" onclick="swTab('${t.id}')"><span class="ni">${t.e}</span><span>${t.l}</span></button>`).join('');
 }
 
@@ -1239,6 +1239,7 @@ async function saveEvaluation() {
 }
 window.saveEvaluation = saveEvaluation;
 
+
 // ═══════════════════════════════════════════════════
 // DIRECTOR DASHBOARD
 // ═══════════════════════════════════════════════════
@@ -1247,22 +1248,73 @@ async function buildDirDash() {
   const clubUsers = Object.values(allAcc).filter(a => san(a.clubName || '') === clubKey);
   const students = clubUsers.filter(a => a.role === 'student').length;
   const instructors = clubUsers.filter(a => a.role === 'instructor').length;
-  const directors = clubUsers.filter(a => a.role === 'director').length;
-  
-  const statsHtml = `
-    <div class="stc"><div class="stv">${students}</div><div class="stl">Students</div></div>
-    <div class="stc"><div class="stv">${instructors}</div><div class="stl">Instructors</div></div>
-    <div class="stc"><div class="stv">${clubUsers.length}</div><div class="stl">Total</div></div>
-  `;
   const statsEl = id('dir-stats');
-  if (statsEl) statsEl.innerHTML = statsHtml;
-  
+  if (statsEl) statsEl.innerHTML = '<div class="stc"><div class="stv">' + students + '</div><div class="stl">Students</div></div><div class="stc"><div class="stv">' + instructors + '</div><div class="stl">Instructors</div></div><div class="stc"><div class="stv">' + clubUsers.length + '</div><div class="stl">Total</div></div>';
   let clsHtml = '';
-  CLASSES.forEach(c => {
-    const cStu = clubUsers.filter(a => a.role === 'student' && a.classId === c.id).length;
-    clsHtml += `<div class="srow"><div class="av" style="background:var(--blu)">${c.e}</div><div class="si"><div class="sn">${c.n}</div><div class="sm2">${cStu} Students</div></div></div>`;
+  CLASSES.forEach(cls => {
+    const cCount = clubUsers.filter(a => (a.role === 'student' || a.role === 'instructor') && a.classId === cls.id).length;
+    if (cCount === 0) return;
+    clsHtml += '<div class="srow" style="cursor:pointer" onclick="openClassOverview('' + cls.id + '','' + cls.n + '','' + cls.e + '')" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><div class="av" style="background:var(--blu)">' + cls.e + '</div><div class="si"><div class="sn">' + cls.n + '</div><div class="sm2">' + cCount + ' Member' + (cCount !== 1 ? 's' : '') + ' &nbsp;&rsaquo;</div></div></div>';
   });
   const classesEl = id('dir-classes');
-  if (classesEl) classesEl.innerHTML = clsHtml;
+  if (classesEl) classesEl.innerHTML = clsHtml || '<div style="text-align:center;padding:20px;color:var(--muted)">No members registered yet.</div>';
 }
 window.buildDirDash = buildDirDash;
+
+async function openClassOverview(classId, className, classEmoji) {
+  const modal = id('class-overview-modal');
+  if (!modal) return;
+  const titleEl = id('class-overview-title');
+  if (titleEl) titleEl.textContent = classEmoji + ' ' + className + ' — Class Overview';
+  const bodyEl = id('class-overview-body');
+  if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Loading...</div>';
+  modal.style.display = 'flex';
+
+  const allAcc = await dbGet('accounts') || {};
+  const members = Object.values(allAcc).filter(a => san(a.clubName || '') === clubKey && a.classId === classId);
+
+  if (members.length === 0) {
+    if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No members in this class yet.</div>';
+    return;
+  }
+
+  const allHonors = await dbGet('clubs/' + clubKey + '/uploads/honors/' + classId) || {};
+  let html = '';
+
+  for (const member of members) {
+    const memberKey = san(member.name || member.email || '');
+    const memberData = allHonors[memberKey] || {};
+    const hist = memberData.history || memberData;
+    const memberHonors = Object.values(hist).filter(h => h && typeof h === 'object');
+    const completed = memberHonors.filter(h => h.score_n || h.score_c);
+    const pending   = memberHonors.filter(h => !h.score_n && !h.score_c);
+    const initials  = (member.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const roleLabel = member.role === 'instructor' ? '📋 Instructor' : '🎒 Student';
+
+    let honorRows = '';
+    completed.forEach(h => {
+      const thumb = h.url ? '<img src="' + h.url + '" style="width:32px;height:32px;object-fit:cover;border-radius:4px">' : '<div style="width:32px;height:32px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center">🏅</div>';
+      honorRows += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--brd,#333)">' + thumb + '<div style="flex:1"><div style="font-size:12px;font-weight:600">' + (h.honorName || h.name || 'Honor') + '</div><div style="font-size:10px;color:var(--muted)">Score: ' + ((h.score_n || 0) + (h.score_c || 0)) + '/10</div></div></div>';
+    });
+
+    html += '<div class="card" style="margin-bottom:12px;padding:14px">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+    html += '<div class="av" style="background:var(--accent);font-size:14px;width:36px;height:36px;min-width:36px">' + initials + '</div>';
+    html += '<div><div style="font-weight:700;font-size:14px">' + (member.name || member.email || 'Unknown') + '</div><div style="font-size:11px;color:var(--muted)">' + roleLabel + '</div></div>';
+    html += '<div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:800;color:#22c55e">' + completed.length + '</div><div style="font-size:10px;color:var(--muted)">Completed</div></div>';
+    html += '</div>';
+    if (completed.length > 0) html += '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">✅ Completed Honors</div>' + honorRows;
+    if (pending.length > 0) html += '<div style="font-size:11px;color:var(--muted);margin-top:6px">⏳ ' + pending.length + ' pending evaluation</div>';
+    if (memberHonors.length === 0) html += '<div style="font-size:11px;color:var(--muted)">No honors uploaded yet.</div>';
+    html += '</div>';
+  }
+
+  if (bodyEl) bodyEl.innerHTML = html;
+}
+window.openClassOverview = openClassOverview;
+
+function closeClassOverview() {
+  const m = id('class-overview-modal');
+  if (m) m.style.display = 'none';
+}
+window.closeClassOverview = closeClassOverview;
