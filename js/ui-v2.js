@@ -1254,7 +1254,7 @@ async function buildDirDash() {
   CLASSES.forEach(cls => {
     const cCount = clubUsers.filter(a => (a.role === 'student' || a.role === 'instructor') && a.classId === cls.id).length;
     if (cCount === 0) return;
-    clsHtml += '<div class="srow" style="cursor:pointer" onclick="openClassOverview('' + cls.id + '','' + cls.n + '','' + cls.e + '')" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><div class="av" style="background:var(--blu)">' + cls.e + '</div><div class="si"><div class="sn">' + cls.n + '</div><div class="sm2">' + cCount + ' Member' + (cCount !== 1 ? 's' : '') + ' &nbsp;&rsaquo;</div></div></div>';
+    clsHtml += `<div class="srow" style="cursor:pointer" onclick="openClassOverview('${cls.id}', '${cls.n}', '${cls.e}')" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><div class="av" style="background:var(--blu)">${cls.e}</div><div class="si"><div class="sn">${cls.n}</div><div class="sm2">${cCount} Member${cCount !== 1 ? 's' : ''} &nbsp;&rsaquo;</div></div></div>`;
   });
   const classesEl = id('dir-classes');
   if (classesEl) classesEl.innerHTML = clsHtml || '<div style="text-align:center;padding:20px;color:var(--muted)">No members registered yet.</div>';
