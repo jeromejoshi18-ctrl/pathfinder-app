@@ -722,18 +722,34 @@
       <div style="flex:1;overflow-y:auto;padding:16px;" id="class-modal-content"></div>
     </div>
 
+    <!-- DEVOTION JOURNAL UPLOAD MODAL -->
+    <div id="devotion-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center">
+      <div style="background:var(--bg2,#1e1e1e);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;max-height:90vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:17px;font-weight:700">📓 Upload Journal</div>
+          <div onclick="closeDevotionModal()" style="cursor:pointer;font-size:22px;color:var(--mut)">✕</div>
+        </div>
+        <p style="font-size:13px;color:var(--mut);margin-bottom:16px">Take a photo of your journal entry for this devotion post.</p>
+        <button class="btn-main" style="margin-bottom:12px" onclick="requestImageFromApp('devotion')">📷 Choose / Take Photo</button>
+        <div id="dev-photo-preview" style="display:none;margin-bottom:12px;text-align:center">
+          <img id="dev-preview-img" src="" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;border:1px solid var(--brd,#333)">
+        </div>
+        <button id="dev-submit-btn" class="btn-main" style="display:none;background:var(--grn,#22c55e)" onclick="submitDevotionJournal()">✅ Submit Journal</button>
+      </div>
+    </div>
+
     </div>
   </div>
 
   <!-- JS moved to js/ modules -->
 
-  <script src="js/globals.js?v=6.6.12"></script>
-  <script src="js/firebase-init.js?v=6.6.12"></script>
-  <script src="js/data.js?v=6.6.12"></script>
-  <script src="js/auth.js?v=6.6.12"></script>
-  <script src="js/ui-v2.js?v=6.6.12"></script>
-  <script src="js/features.js?v=6.6.12"></script>
-  <script src="js/app.js?v=6.6.12"></script>
+  <script src="js/globals.js?v=6.6.13"></script>
+  <script src="js/firebase-init.js?v=6.6.13"></script>
+  <script src="js/data.js?v=6.6.13"></script>
+  <script src="js/auth.js?v=6.6.13"></script>
+  <script src="js/ui-v2.js?v=6.6.13"></script>
+  <script src="js/features.js?v=6.6.13"></script>
+  <script src="js/app.js?v=6.6.13"></script>
 </body>
 
 </html>
