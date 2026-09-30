@@ -1,3 +1,8 @@
+
+function formatName(str) {
+  if (!str) return 'Unknown';
+  return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
 // NAVIGATION
 // ═══════════════════════════════════════════════════
 function buildNav() {
@@ -1267,46 +1272,63 @@ async function openClassOverview(classId, className, classEmoji) {
   const titleEl = id('class-overview-title');
   if (titleEl) titleEl.textContent = classEmoji + ' ' + className + ' — Class Overview';
   const bodyEl = id('class-overview-body');
-  if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Loading...</div>';
+  if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut)">Loading...</div>';
   modal.style.display = 'flex';
 
   const allAcc = await dbGet('accounts') || {};
   const members = Object.values(allAcc).filter(a => san(a.clubName || '') === clubKey && a.classId === classId);
 
   if (members.length === 0) {
-    if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No members in this class yet.</div>';
+    if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut)">No members in this class yet.</div>';
     return;
   }
 
   const allHonors = await dbGet('clubs/' + clubKey + '/uploads/honors/' + classId) || {};
   let html = '';
 
-  for (const member of members) {
-    const memberKey = san(member.name || member.email || '');
-    const memberData = allHonors[memberKey] || {};
-    const hist = memberData.history || memberData;
-    const memberHonors = Object.values(hist).filter(h => h && typeof h === 'object');
-    const completed = memberHonors.filter(h => h.score_n || h.score_c);
-    const pending   = memberHonors.filter(h => !h.score_n && !h.score_c);
-    const initials  = (member.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const roleLabel = member.role === 'instructor' ? '📋 Instructor' : '🎒 Student';
+  const instructors = members.filter(m => m.role === 'instructor');
+  const students = members.filter(m => m.role === 'student');
 
-    let honorRows = '';
-    completed.forEach(h => {
-      const thumb = h.url ? '<img src="' + h.url + '" style="width:32px;height:32px;object-fit:cover;border-radius:4px">' : '<div style="width:32px;height:32px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center">🏅</div>';
-      honorRows += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--brd,#333)">' + thumb + '<div style="flex:1"><div style="font-size:12px;font-weight:600">' + (h.honorName || h.name || 'Honor') + '</div><div style="font-size:10px;color:var(--muted)">Score: ' + ((h.score_n || 0) + (h.score_c || 0)) + '/10</div></div></div>';
-    });
+  if (instructors.length > 0) {
+    html += '<div style="font-size:12px;font-weight:700;color:var(--mut);margin:15px 0 10px 5px;text-transform:uppercase">📋 Instructors</div>';
+    for (const member of instructors) {
+      const initials  = formatName(member.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      html += '<div class="card" style="margin-bottom:12px;padding:14px">';
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+      html += '<div class="av" style="background:var(--blu);font-size:14px;width:36px;height:36px;min-width:36px">' + initials + '</div>';
+      html += '<div><div style="font-weight:700;font-size:14px">' + formatName(member.name || member.email) + '</div><div style="font-size:11px;color:var(--mut)">📋 Instructor</div></div>';
+      html += '</div></div>';
+    }
+  }
 
-    html += '<div class="card" style="margin-bottom:12px;padding:14px">';
-    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-    html += '<div class="av" style="background:var(--accent);font-size:14px;width:36px;height:36px;min-width:36px">' + initials + '</div>';
-    html += '<div><div style="font-weight:700;font-size:14px">' + (member.name || member.email || 'Unknown') + '</div><div style="font-size:11px;color:var(--muted)">' + roleLabel + '</div></div>';
-    html += '<div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:800;color:#22c55e">' + completed.length + '</div><div style="font-size:10px;color:var(--muted)">Completed</div></div>';
-    html += '</div>';
-    if (completed.length > 0) html += '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">✅ Completed Honors</div>' + honorRows;
-    if (pending.length > 0) html += '<div style="font-size:11px;color:var(--muted);margin-top:6px">⏳ ' + pending.length + ' pending evaluation</div>';
-    if (memberHonors.length === 0) html += '<div style="font-size:11px;color:var(--muted)">No honors uploaded yet.</div>';
-    html += '</div>';
+  if (students.length > 0) {
+    html += '<div style="font-size:12px;font-weight:700;color:var(--mut);margin:15px 0 10px 5px;text-transform:uppercase">🎒 Students</div>';
+    for (const member of students) {
+      const memberKey = san(member.name || member.email || '');
+      const memberData = allHonors[memberKey] || {};
+      const hist = memberData.history || memberData;
+      const memberHonors = Object.values(hist).filter(h => h && typeof h === 'object');
+      const completed = memberHonors.filter(h => h.score_n || h.score_c);
+      const pending   = memberHonors.filter(h => !h.score_n && !h.score_c);
+      const initials  = formatName(member.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+      let honorRows = '';
+      completed.forEach(h => {
+        const thumb = h.url ? '<img src="' + h.url + '" style="width:32px;height:32px;object-fit:cover;border-radius:4px">' : '<div style="width:32px;height:32px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center">🏅</div>';
+        honorRows += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--brd,#333)">' + thumb + '<div style="flex:1"><div style="font-size:12px;font-weight:600">' + (h.honorName || h.name || 'Honor') + '</div><div style="font-size:10px;color:var(--mut)">Score: ' + ((h.score_n || 0) + (h.score_c || 0)) + '/10</div></div></div>';
+      });
+
+      html += '<div class="card" style="margin-bottom:12px;padding:14px">';
+      html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+      html += '<div class="av" style="background:var(--accent);font-size:14px;width:36px;height:36px;min-width:36px">' + initials + '</div>';
+      html += '<div><div style="font-weight:700;font-size:14px">' + formatName(member.name || member.email) + '</div><div style="font-size:11px;color:var(--mut)">🎒 Student</div></div>';
+      html += '<div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:800;color:#22c55e">' + completed.length + '</div><div style="font-size:10px;color:var(--mut)">Completed</div></div>';
+      html += '</div>';
+      if (completed.length > 0) html += '<div style="font-size:11px;font-weight:700;color:var(--mut);margin-bottom:4px;text-transform:uppercase">✅ Completed Honors</div>' + honorRows;
+      if (pending.length > 0) html += '<div style="font-size:11px;color:var(--mut);margin-top:6px">⏳ ' + pending.length + ' pending evaluation</div>';
+      if (memberHonors.length === 0) html += '<div style="font-size:11px;color:var(--mut)">No honors uploaded yet.</div>';
+      html += '</div>';
+    }
   }
 
   if (bodyEl) bodyEl.innerHTML = html;
