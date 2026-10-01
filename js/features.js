@@ -128,6 +128,30 @@
       // Note: We don't null pendingUploadType here because we might be in a loop
     }
 
+    window.clearPendingUpload = function(type) {
+      if (type === 'requirement') {
+        window.requirementPhotoData = null;
+        const el = id('req-photo-preview');
+        if (el) el.style.display = 'none';
+        if (id('req-img-prev')) id('req-img-prev').src = '';
+        toast('Upload cleared');
+      } else if (type === 'honor') {
+        window.honorPhotoData = null;
+        const el = id('hon-photo-preview');
+        if (el) el.style.display = 'none';
+        if (id('hon-img-prev')) id('hon-img-prev').src = '';
+        if (id('hon-photo-name')) id('hon-photo-name').textContent = '';
+        toast('Upload cleared');
+      } else if (type === 'devotion') {
+        window.currentDevotionPhoto = null;
+        const el = id('dev-photo-preview');
+        if (el) el.style.display = 'none';
+        if (id('dev-preview-img')) id('dev-preview-img').src = '';
+        if (id('dev-submit-btn')) id('dev-submit-btn').style.display = 'none';
+        toast('Upload cleared');
+      }
+    };
+
     async function uploadToCloudinary(base64Data, filename) {
       try {
         console.log('Starting Cloudinary upload...');

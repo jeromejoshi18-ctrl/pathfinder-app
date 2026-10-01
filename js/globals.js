@@ -1,4 +1,4 @@
-﻿// Global Error Handler for debugging
+// Global Error Handler for debugging
 window.onerror = function(msg, url, line, col, err) {
   console.error('Global Error:', msg, 'at', url, ':', line, 'col:', col, 'error:', err);
   
@@ -92,7 +92,7 @@ window.checkForUpdates = window.checkForUpdates || (() => console.log('Safety fa
 // ═══════════════════════════════════════════════════
 // GLOBAL STATE
 // ═══════════════════════════════════════════════════
-const APP_VERSION = '6.6.7';
+const APP_VERSION = '6.6.9';
 const CLOUDINARY_CLOUD_NAME = 'dq1kk9tkd';
 const CLOUDINARY_UPLOAD_PRESET = 'tyxio0qs';
 

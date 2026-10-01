@@ -36,7 +36,8 @@
       const clsPick = id('cls-picker'); if (clsPick) clsPick.style.display = (r === 'student' || r === 'instructor') ? 'block' : 'none';
       const slotPick = id('slot-picker'); if (slotPick) slotPick.style.display = r === 'instructor' ? 'block' : 'none';
       const instrField = id('instructor-name-field'); if (instrField) instrField.style.display = (r === 'instructor') ? 'block' : 'none';
-      const userField = id('username-field'); if (userField) userField.style.display = (r === 'instructor') ? 'none' : 'block';
+      const userField = id('username-field'); if (userField) userField.style.display = (r === 'student') ? 'block' : 'none';
+      const dirField = id('director-name-field'); if (dirField) dirField.style.display = (r === 'director') ? 'block' : 'none';
       const emailField = id('email-field'); if (emailField) emailField.style.display = (r === 'instructor') ? 'none' : 'block';
     }
     function pickDirType(t) {
@@ -73,6 +74,10 @@
         const instr = id('si-instructor').value;
         if (!instr) { setErr('si-err', 'Please select your name.'); return; }
         username = instr;
+      } else if (selRole === 'director') {
+        const dirName = id('si-director').value;
+        if (!dirName) { setErr('si-err', 'Please select your name.'); return; }
+        username = dirName;
       }
       
       if (!username) { setErr('si-err', 'Please enter your name or select one from the list.'); return; }

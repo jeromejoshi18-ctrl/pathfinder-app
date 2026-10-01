@@ -195,7 +195,7 @@
 
     function checkForUpdates() {
       console.log('Checking for updates...');
-      toast('🚀 You are using the latest version (v6.6.5).');
+      toast('🚀 You are using the latest version (v6.6.9).');
     }
     
     // Safety Fallback for UI functions that might be called before ui.js loads
@@ -203,4 +203,4 @@
       window.checkNewMessages = (c, m) => console.log('Safety fallback: checkNewMessages', c, m);
     }
 
-    // ═══════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════

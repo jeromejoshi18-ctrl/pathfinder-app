@@ -86,7 +86,7 @@ async function initDevotionTab() {
 }
 
 async function loadDevotionHistory() {
-  console.log('--- loadDevotionHistory v6.6.5-FIX ---');
+  console.log('--- loadDevotionHistory v6.6.9-FIX ---');
   const isStudent = cu.role === 'student';
   const targetId = isStudent ? 'dev-posts-list' : 'dev-inst-history-list';
   const list = id(targetId);
