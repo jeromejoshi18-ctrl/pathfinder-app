@@ -1,4 +1,4 @@
-
+﻿
 function formatName(str) {
   if (!str) return 'Unknown';
   return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -1340,3 +1340,171 @@ function closeClassOverview() {
   if (m) m.style.display = 'none';
 }
 window.closeClassOverview = closeClassOverview;
+
+
+window.handleMsgClick = function(el, key, isMine) {
+  if (key.startsWith('optimistic') || key.startsWith('demo')) return;
+  if (el.getAttribute('data-del') === 'true') return;
+
+  const textNode = el.querySelector('.bt');
+  let currentText = '';
+  if (textNode) {
+     const clone = textNode.cloneNode(true);
+     const small = clone.querySelector('small');
+     if (small) small.remove();
+     currentText = clone.textContent.trim();
+  }
+
+  let sheet = document.getElementById('chat-action-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'chat-action-sheet';
+    sheet.className = 'sheet-overlay';
+    sheet.style.display = 'none';
+    sheet.innerHTML = `
+      <div class="sheet-menu" style="background:var(--bg); border-radius:16px 16px 0 0; padding:16px; width:100%; max-width:480px; box-shadow:0 -4px 16px rgba(0,0,0,0.2);">
+        <div class="sheet-title" style="margin-bottom:12px; font-weight:800; color:var(--mut);">Message Options</div>
+        <div id="cas-edit" class="sheet-btn" style="display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--brd,#333); cursor:pointer;">
+          <div style="flex:1; font-weight:700;">Edit Message</div>
+        </div>
+        <div id="cas-del" class="sheet-btn" style="display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--brd,#333); cursor:pointer; color:var(--red);">
+          <div style="flex:1; font-weight:700;">Delete Message</div>
+        </div>
+        <button class="btn-main" style="background:var(--bg3); color:var(--txt); margin-top:10px; width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer;" onclick="document.getElementById('chat-action-sheet').style.display='none'">Cancel</button>
+      </div>
+    `;
+    sheet.style.position = 'fixed';
+    sheet.style.top = '0';
+    sheet.style.left = '0';
+    sheet.style.width = '100%';
+    sheet.style.height = '100%';
+    sheet.style.background = 'rgba(0,0,0,0.6)';
+    sheet.style.zIndex = '99999';
+    sheet.style.display = 'flex';
+    sheet.style.alignItems = 'flex-end';
+    sheet.style.justifyContent = 'center';
+    document.body.appendChild(sheet);
+  }
+  
+  sheet.style.display = 'flex';
+  
+  const editBtn = document.getElementById('cas-edit');
+  const delBtn = document.getElementById('cas-del');
+  
+  editBtn.style.display = isMine ? 'flex' : 'none';
+  
+  editBtn.onclick = () => {
+    sheet.style.display = 'none';
+    setTimeout(() => {
+      const newText = prompt("Edit message:", currentText);
+      if (newText !== null && newText.trim() !== '' && newText.trim() !== currentText) {
+         window.updateMsg(key, newText.trim(), true, false);
+      }
+    }, 100);
+  };
+  
+  delBtn.onclick = () => {
+    sheet.style.display = 'none';
+    setTimeout(() => {
+      if (confirm("Delete this message?")) {
+         window.updateMsg(key, '🚫 This message was deleted', false, true);
+      }
+    }, 100);
+  };
+};
+
+window.updateMsg = function(key, text, isEdited, isDeleted) {
+  if (window.demoMode) return;
+  if (isDeleted) {
+    dbSet(`clubs/${clubKey}/messages/${activeChat}/${key}/deleted`, true);
+    dbSet(`clubs/${clubKey}/messages/${activeChat}/${key}/edited`, null);
+  } else if (isEdited) {
+    dbSet(`clubs/${clubKey}/messages/${activeChat}/${key}/edited`, true);
+  }
+  dbSet(`clubs/${clubKey}/messages/${activeChat}/${key}/t`, text);
+};
+
+
+
+
+window.handleMsgClick = function(el, key, isMine) {
+  if (key.startsWith('optimistic') || key.startsWith('demo')) return;
+  if (el.getAttribute('data-del') === 'true') return;
+
+  const textNode = el.querySelector('.bt');
+  let currentText = '';
+  if (textNode) {
+     const clone = textNode.cloneNode(true);
+     const small = clone.querySelector('small');
+     if (small) small.remove();
+     currentText = clone.textContent.trim();
+  }
+
+  let sheet = document.getElementById('chat-action-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'chat-action-sheet';
+    sheet.className = 'sheet-overlay';
+    sheet.style.display = 'none';
+    sheet.innerHTML = 
+      <div class="sheet-menu" style="background:var(--bg); border-radius:16px 16px 0 0; padding:16px; width:100%; max-width:480px; box-shadow:0 -4px 16px rgba(0,0,0,0.2);">
+        <div class="sheet-title" style="margin-bottom:12px; font-weight:800; color:var(--mut);">Message Options</div>
+        <div id="cas-edit" class="sheet-btn" style="display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--brd,#333); cursor:pointer;">
+          <div style="flex:1; font-weight:700;">Edit Message</div>
+        </div>
+        <div id="cas-del" class="sheet-btn" style="display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--brd,#333); cursor:pointer; color:var(--red);">
+          <div style="flex:1; font-weight:700;">Delete Message</div>
+        </div>
+        <button class="btn-main" style="background:var(--bg3); color:var(--txt); margin-top:10px; width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer;" onclick="document.getElementById('chat-action-sheet').style.display='none'">Cancel</button>
+      </div>
+    ;
+    sheet.style.position = 'fixed';
+    sheet.style.top = '0';
+    sheet.style.left = '0';
+    sheet.style.width = '100%';
+    sheet.style.height = '100%';
+    sheet.style.background = 'rgba(0,0,0,0.6)';
+    sheet.style.zIndex = '99999';
+    sheet.style.display = 'flex';
+    sheet.style.alignItems = 'flex-end';
+    sheet.style.justifyContent = 'center';
+    document.body.appendChild(sheet);
+  }
+  
+  sheet.style.display = 'flex';
+  
+  const editBtn = document.getElementById('cas-edit');
+  const delBtn = document.getElementById('cas-del');
+  
+  editBtn.style.display = isMine ? 'flex' : 'none';
+  
+  editBtn.onclick = () => {
+    sheet.style.display = 'none';
+    setTimeout(() => {
+      const newText = prompt("Edit message:", currentText);
+      if (newText !== null && newText.trim() !== '' && newText.trim() !== currentText) {
+         window.updateMsg(key, newText.trim(), true, false);
+      }
+    }, 100);
+  };
+  
+  delBtn.onclick = () => {
+    sheet.style.display = 'none';
+    setTimeout(() => {
+      if (confirm("Delete this message?")) {
+         window.updateMsg(key, '🚫 This message was deleted', false, true);
+      }
+    }, 100);
+  };
+};
+
+window.updateMsg = function(key, text, isEdited, isDeleted) {
+  if (window.demoMode) return;
+  if (isDeleted) {
+    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /deleted, true);
+    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /edited, null);
+  } else if (isEdited) {
+    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /edited, true);
+  }
+  dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /t, text);
+};

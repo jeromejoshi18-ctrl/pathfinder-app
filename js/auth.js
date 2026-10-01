@@ -90,6 +90,22 @@
       let p = await dbGet('accounts/' + usernameKey);
       
       if (!p) {
+        // Check if instructor slot is already taken by someone else
+        if (selRole === 'instructor') {
+          const allAcc = await dbGet('accounts') || {};
+          const slotTaken = Object.values(allAcc).some(a =>
+            a.role === 'instructor' &&
+            san(a.clubName || '') === san('Oasis Pathfinder Club') &&
+            a.classId === selClass &&
+            a.slot === selSlot
+          );
+          if (slotTaken) {
+            hideLoad();
+            setErr('si-err', 'Instructor ' + (selSlot === 'slot1' ? '1' : '2') + ' is already filled for this class.');
+            return;
+          }
+        }
+        
         // Auto-create account if not found
         p = {
           name: username,
@@ -114,6 +130,11 @@
           const pCls = CLASSES.find(c => c.id === p.classId);
           const clsName = pCls ? pCls.n : p.classId;
           setErr('si-err', 'This name is already registered in the ' + clsName + ' class.');
+          return;
+        }
+        if (selRole === 'instructor' && p.slot !== selSlot) {
+          hideLoad();
+          setErr('si-err', 'You are registered as Instructor ' + (p.slot === 'slot1' ? '1' : '2') + '. Please select your correct position.');
           return;
         }
       }
@@ -216,4 +237,5 @@
         cu = null; show('auth-screen'); id('msg-list').innerHTML = ''; toast('Signed out.');
       }
     }
+
 
