@@ -290,6 +290,7 @@
     function goBack() {
       // Close open modals/sheets first
       if (id('image-action-sheet')?.style.display === 'flex') { closeSheet(); return; }
+      if (id('class-overview-modal')?.style.display === 'flex') { if (window.closeClassOverview) closeClassOverview(); else id('class-overview-modal').style.display = 'none'; return; }
       if (id('devotion-modal')?.style.display === 'flex') { if (window.closeDevotionModal) closeDevotionModal(); else id('devotion-modal').style.display = 'none'; return; }
       if (id('eval-card')?.style.display === 'flex') { id('eval-card').style.display = 'none'; return; }
       if (id('student-modal')?.style.display === 'flex') { closeStudentModal(); return; }
@@ -334,6 +335,12 @@
       e.preventDefault();
       goBack();
     }, false);
+    
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.addListener('backButton', () => {
+        goBack();
+      });
+    }
 
     // ═══════════════════════════════════════════════════
     // NOTIFICATIONS

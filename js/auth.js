@@ -1,4 +1,4 @@
-
+﻿
     // ═══════════════════════════════════════════════════
     // AUTH SYSTEM
     // ═══════════════════════════════════════════════════
@@ -102,6 +102,20 @@
           createdAt: Date.now()
         };
         await dbSet('accounts/' + usernameKey, p);
+      } else {
+        // Prevent duplicate creation/signing into wrong role or class
+        if (p.role !== selRole) {
+          hideLoad();
+          setErr('si-err', 'This name is already registered as a ' + p.role + '.');
+          return;
+        }
+        if ((selRole === 'student' || selRole === 'instructor') && p.classId !== selClass) {
+          hideLoad();
+          const pCls = CLASSES.find(c => c.id === p.classId);
+          const clsName = pCls ? pCls.n : p.classId;
+          setErr('si-err', 'This name is already registered in the ' + clsName + ' class.');
+          return;
+        }
       }
 
       const cls = CLASSES.find(c => c.id === p.classId) || { n: 'All', e: '👔' };
@@ -202,3 +216,4 @@
         cu = null; show('auth-screen'); id('msg-list').innerHTML = ''; toast('Signed out.');
       }
     }
+
