@@ -1,4 +1,4 @@
-﻿
+
 function formatName(str) {
   if (!str) return 'Unknown';
   return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -1446,7 +1446,7 @@ window.handleMsgClick = function(el, key, isMine) {
     sheet.id = 'chat-action-sheet';
     sheet.className = 'sheet-overlay';
     sheet.style.display = 'none';
-    sheet.innerHTML = 
+    sheet.innerHTML = `
       <div class="sheet-menu" style="background:var(--bg); border-radius:16px 16px 0 0; padding:16px; width:100%; max-width:480px; box-shadow:0 -4px 16px rgba(0,0,0,0.2);">
         <div class="sheet-title" style="margin-bottom:12px; font-weight:800; color:var(--mut);">Message Options</div>
         <div id="cas-edit" class="sheet-btn" style="display:flex; align-items:center; padding:16px; border-bottom:1px solid var(--brd,#333); cursor:pointer;">
@@ -1457,7 +1457,7 @@ window.handleMsgClick = function(el, key, isMine) {
         </div>
         <button class="btn-main" style="background:var(--bg3); color:var(--txt); margin-top:10px; width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer;" onclick="document.getElementById('chat-action-sheet').style.display='none'">Cancel</button>
       </div>
-    ;
+    `;
     sheet.style.position = 'fixed';
     sheet.style.top = '0';
     sheet.style.left = '0';
@@ -1501,10 +1501,10 @@ window.handleMsgClick = function(el, key, isMine) {
 window.updateMsg = function(key, text, isEdited, isDeleted) {
   if (window.demoMode) return;
   if (isDeleted) {
-    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /deleted, true);
-    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /edited, null);
+    dbSet('clubs/' + clubKey + '/messages/' + activeChat + '/' + key + '/deleted', true);
+    dbSet('clubs/' + clubKey + '/messages/' + activeChat + '/' + key + '/edited', null);
   } else if (isEdited) {
-    dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /edited, true);
+    dbSet('clubs/' + clubKey + '/messages/' + activeChat + '/' + key + '/edited', true);
   }
-  dbSet(clubs/ + clubKey + /messages/ + activeChat + / + key + /t, text);
+  dbSet('clubs/' + clubKey + '/messages/' + activeChat + '/' + key + '/t', text);
 };
